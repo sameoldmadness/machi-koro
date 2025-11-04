@@ -44,7 +44,7 @@ export function canBuy(cardName: Name, player: Player, game: State): boolean {
 }
 export function roll(dice: number): [number, number[]] {
     let rolls = new Array(dice).fill(null).map(rollOne);
-    let total = rolls.reduce((a,b)=>a+b);
+    let total = rolls.reduce((a, b) => a + b);
 
     return [total, rolls];
 }

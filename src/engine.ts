@@ -14,46 +14,46 @@ export async function initGame() {
 
 export async function runGame(game: State, maxSteps: number = 1000) {
     for (let i = 0; i < maxSteps; i += 1) {
-            printtt(`Step number ${i}`);
-            game.activePlayerIndex += 1;
-            game.activePlayerIndex %= game.players.length;
-            let player = game.players[game.activePlayerIndex];
-            printtt(`Active player: ${player.name}`);
-            let nDice = await player.strategy.roll(game);
-            printtt(`Player decides to roll ${nDice} dice(s)`);
-            let [res, rolls] = roll(nDice);
-            printtt(`Player rolled ${res}`);
-            // TODO connect ths with reroll strategy and amusement cards
-            if (player.amusementDeck['Radio Tower']) {
-                let nDice = await player.strategy.reroll(res, game);
-                if (nDice) {
-                    [res, rolls] = roll(nDice);
-                    printtt(`Player rerolled ${res}`);
-                } else {
-                    printtt(`Player decides not to reroll`);
-                }
-            }
-            await process(res, game);
-            if (rolls[0] === rolls[1] && player.amusementDeck['Amusement Park']) {
-                printtt(`Player rolled double and gets to roll again`);
-                let [res2, rolls2] = roll(nDice);
-                printtt(`Player rolled ${res2}`);
-                process(res2, game);
-                // TODO allow to reroll here if not rerolled before
-            }
-            printtt(`Player has ${player.budget} coins`);
-            let purchase = await player.strategy.buy(game);
-            if (purchase) {
-                printtt(`Player decides to buy ${purchase}`);
-                buy(purchase, player, game);
-                printtt(`Player decides to skip`);
-            }
-            if (playerHasWon(player)) {
-                // wins[player.name as 'A' | 'B' | 'C'] += 1;
-                printtt(`Player ${player.name} has won the game!`);
-                break;
+        printtt(`Step number ${i}`);
+        game.activePlayerIndex += 1;
+        game.activePlayerIndex %= game.players.length;
+        let player = game.players[game.activePlayerIndex];
+        printtt(`Active player: ${player.name}`);
+        let nDice = await player.strategy.roll(game);
+        printtt(`Player decides to roll ${nDice} dice(s)`);
+        let [res, rolls] = roll(nDice);
+        printtt(`Player rolled ${res}`);
+        // TODO connect ths with reroll strategy and amusement cards
+        if (player.amusementDeck['Radio Tower']) {
+            let nDice = await player.strategy.reroll(res, game);
+            if (nDice) {
+                [res, rolls] = roll(nDice);
+                printtt(`Player rerolled ${res}`);
+            } else {
+                printtt(`Player decides not to reroll`);
             }
         }
+        await process(res, game);
+        if (rolls[0] === rolls[1] && player.amusementDeck['Amusement Park']) {
+            printtt(`Player rolled double and gets to roll again`);
+            let [res2, rolls2] = roll(nDice);
+            printtt(`Player rolled ${res2}`);
+            process(res2, game);
+            // TODO allow to reroll here if not rerolled before
+        }
+        printtt(`Player has ${player.budget} coins`);
+        let purchase = await player.strategy.buy(game);
+        if (purchase) {
+            printtt(`Player decides to buy ${purchase}`);
+            buy(purchase, player, game);
+            printtt(`Player decides to skip`);
+        }
+        if (playerHasWon(player)) {
+            // wins[player.name as 'A' | 'B' | 'C'] += 1;
+            printtt(`Player ${player.name} has won the game!`);
+            break;
+        }
+    }
 }
 
 async function process(res: number, game: State) {
@@ -130,7 +130,7 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                             printtt(`Player ${player.name} decided not to swap cards`);
                             break;
                         } else {
-                            let {give, take, otherPlayerIndex} = result;
+                            let { give, take, otherPlayerIndex } = result;
                             let otherPlayer = game.players[otherPlayerIndex!];
                             if (cards.find(v => v.name === give)?.color === 'purple' ||
                                 cards.find(v => v.name === take)?.color === 'purple') {
@@ -147,7 +147,7 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                             player.deck[take] = (player.deck[take] || 0) + 1;
                             printtt(`Player ${player.name} swapped card ${give} with player ${otherPlayer.name} for card ${take}`);
                         }
-                        
+
                         break;
                 }
             }

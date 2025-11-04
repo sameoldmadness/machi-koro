@@ -25,10 +25,10 @@ export const defaultStrategy: Strategy = {
             }
         }
 
-        const cardsToBuy: Name[] = ['Apple Garden', 'Bakery','Business Center',
-                                    'Cafe','Cheese Factory','Farm','Forest',
-                                    'Fruit Market','Furniture Factory','Grain Field',
-                                    'Mine','Restraunt','Shop', 'Stadium','TV Center'];
+        const cardsToBuy: Name[] = ['Apple Garden', 'Bakery', 'Business Center',
+            'Cafe', 'Cheese Factory', 'Farm', 'Forest',
+            'Fruit Market', 'Furniture Factory', 'Grain Field',
+            'Mine', 'Restraunt', 'Shop', 'Stadium', 'TV Center'];
 
         for (const cardToBuy of cardsToBuy) {
             if (canBuy(cardToBuy, player, game)) {
@@ -130,7 +130,7 @@ export const shopStrategy: Strategy = {
         // if (canBuy('TV Center', player, game)) {
         //     return 'TV Center';
         // }
-        
+
         const terminalCard = amusementCards.find(v => v.name === 'Shopping Center')!;
         if (!player.amusementDeck['Shopping Center'] && terminalCard.cost <= player.budget) {
             return 'Shopping Center';

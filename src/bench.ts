@@ -19,7 +19,7 @@ async function main() {
         const game = createGame(shuffle([playerA, playerB, playerC]));
 
         await runGame(game);
-        
+
         dump(game);
     }
     enableLogging();

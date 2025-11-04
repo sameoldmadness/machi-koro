@@ -69,7 +69,7 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
             }
             default:
                 return res.status(400).json({ error: `Unknown action "${action}"` });
-        }        
+        }
 
         if (!action || typeof action !== 'string') {
             return res.status(400).json({ error: 'Request body must include "action" (string) and optional "payload".' });

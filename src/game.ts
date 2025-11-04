@@ -1,24 +1,24 @@
-export type Name = 
-    'Apple Garden' | 
+export type Name =
+    'Apple Garden' |
     'Bakery' |
     'Business Center' |
     'Cafe' |
     'Cheese Factory' |
     'Farm' |
     'Forest' |
-    'Fruit Market' | 
+    'Fruit Market' |
     'Furniture Factory' |
     'Grain Field' |
     'Mine' |
     'Restraunt' |
-    'Shop' | 
+    'Shop' |
     'Stadium' |
     'TV Center';
 
 export type Color = 'green' | 'blue' | 'red' | 'purple';
 export type Kind = 'fruit' | 'cog' | 'grain' | 'tower' | 'cow' | 'bread' | 'factory' | 'coffee';
 
-export type SpecialRule = 
+export type SpecialRule =
     'take_2_coins_from_every_player' |
     'take_5_coins_from_one_player' |
     'switch_1_non_tower_card_with_one_player';
@@ -30,7 +30,7 @@ export type Card = {
     cost: number;
     match: number[];
     income?: number;
-    multiplier?: Partial<Record<Kind, number>>; 
+    multiplier?: Partial<Record<Kind, number>>;
     specialRule?: SpecialRule;
     singular?: true;
 }
@@ -60,11 +60,11 @@ export const cards: Card[] = [
         match: [2, 3],
         income: 1,
     },
-    
+
     {
         name: 'Cafe',
         color: 'red',
-        kind: 'coffee', 
+        kind: 'coffee',
         cost: 2,
         match: [3],
         income: 1,
@@ -156,7 +156,7 @@ export const cards: Card[] = [
         match: [10],
         income: 3,
     },
-    {   
+    {
         name: "Fruit Market",
         color: "green",
         kind: 'fruit',
@@ -171,30 +171,30 @@ export const cards: Card[] = [
 export type Deck = Record<Name, number>;
 
 export const deck: Deck = {
-    'Apple Garden': 6, 
+    'Apple Garden': 6,
     'Bakery': 6,
     'Business Center': 5,
     'Cafe': 6,
     'Cheese Factory': 6,
     'Farm': 6,
     'Forest': 6,
-    'Fruit Market': 6, 
+    'Fruit Market': 6,
     'Furniture Factory': 6,
     'Grain Field': 6,
     'Mine': 6,
     'Restraunt': 6,
-    'Shop': 6, 
+    'Shop': 6,
     'Stadium': 5,
     'TV Center': 5,
 }
 
-export type AmusementName = 
+export type AmusementName =
     'Terminal' |
     'Shopping Center' |
     'Amusement Park' |
     'Radio Tower';
 
-export type AmusementSpecialRule = 
+export type AmusementSpecialRule =
     'may_roll_2_dice' |
     'plue_1_income_for_coffee_and_bread_cards' |
     'roll_again_on_double' |
@@ -267,5 +267,5 @@ export type Strategy = {
     roll: (game: State) => Promise<RollType>;
     reroll: (prev: number, game: State) => Promise<RollType | null>;
     buy: (game: State) => Promise<Name | AmusementName | null>;
-    swap: (game: State) => Promise<{give: Name, take: Name, otherPlayerIndex: null} | null>;
+    swap: (game: State) => Promise<{ give: Name, take: Name, otherPlayerIndex: null } | null>;
 }
