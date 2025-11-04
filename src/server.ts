@@ -1,3 +1,5 @@
+import './.env';
+
 import express, { Request, Response } from 'express';
 import { defaultStrategy } from './strategy';
 import { State } from './game';

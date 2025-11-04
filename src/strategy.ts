@@ -1,4 +1,5 @@
 import { amusementCards, AmusementName, Name, State, Strategy } from "./game";
+import { buy } from "./openai";
 import { canBuy, canRollTwoDice } from "./utils";
 
 
@@ -188,6 +189,21 @@ export const cogStrategy: Strategy = {
         }
 
         return null;
+    },
+    swap: async (game: State) => {
+        return defaultStrategy.swap(game);
+    }
+}
+
+export const openaiStrategy: Strategy = {
+    roll: async (game: State) => {
+        return defaultStrategy.roll(game);
+    },
+    reroll: async (prev: number, game: State) => {
+        return defaultStrategy.reroll(prev, game);
+    },
+    buy: async (game: State) => {
+        return await buy(game) as Name | AmusementName | null;
     },
     swap: async (game: State) => {
         return defaultStrategy.swap(game);

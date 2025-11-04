@@ -1,15 +1,15 @@
 import { cards, Player, State } from "./game";
-import { cogStrategy, defaultStrategy, shopStrategy } from "./strategy";
+import { cogStrategy, openaiStrategy, shopStrategy } from "./strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, printtt, roll, shuffle } from "./utils";
 
 export async function initGame() {
     const playerA = createPlayer('A', cogStrategy);
-    const playerB = createPlayer('B', defaultStrategy);
+    const playerB = createPlayer('B', openaiStrategy);
     const playerC = createPlayer('C', shopStrategy);
 
     const game = createGame(shuffle([playerA, playerB, playerC]));
 
-    await runGame(game);
+    await runGame(game, 3);
 }
 
 export async function runGame(game: State, maxSteps: number = 1000) {
@@ -46,6 +46,7 @@ export async function runGame(game: State, maxSteps: number = 1000) {
         if (purchase) {
             printtt(`Player decides to buy ${purchase}`);
             buy(purchase, player, game);
+        } else {
             printtt(`Player decides to skip`);
         }
         if (playerHasWon(player)) {

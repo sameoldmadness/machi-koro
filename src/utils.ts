@@ -76,7 +76,7 @@ export function playerHasWon(player: Player): boolean {
 }
 
 
-let loggingEnabled = false;
+let loggingEnabled = true;
 
 export function enableLogging() {
     loggingEnabled = true;
