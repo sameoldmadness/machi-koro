@@ -1,0 +1,27 @@
+// This tsconfig.json drives Intellisense
+{
+  "compilerOptions": {
+    // `target` and `lib` match @tsconfig/bases for node14, since that's the oldest node LTS, so it's the oldest node we support
+    "target": "es2020",
+    "lib": ["es2020"],
+    "rootDir": ".",
+    "outDir": "temp",
+    "tsBuildInfoFile": "temp/tsconfig.tsbuildinfo",
+    "noEmit": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "types": ["node"],
+    "stripInternal": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

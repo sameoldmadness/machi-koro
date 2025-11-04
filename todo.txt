@@ -1,0 +1,16 @@
+TODO
+
++ implement buying amusements
++ implement win condition
++ implement reroll
++ implement roll on double
++ implement card cost increse
++ support singular cards
++ implement purple cards
+
+- better strategy
+- strategy comparison framework
+
+- unit tests
+- checks on both strategy and host sides
+- split into modules clean up repetition
