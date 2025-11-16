@@ -1,10 +1,10 @@
 import { cards, Player, State } from "./game";
-import { cogStrategy, openaiStrategy, shopStrategy } from "./strategy";
+import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, printtt, roll, shuffle } from "./utils";
 
 export async function initGame() {
     const playerA = createPlayer('A', cogStrategy);
-    const playerB = createPlayer('B', openaiStrategy);
+    const playerB = createPlayer('B', grainStrategy);
     const playerC = createPlayer('C', shopStrategy);
 
     const game = createGame(shuffle([playerA, playerB, playerC]));
