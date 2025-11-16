@@ -9,7 +9,7 @@ export async function initGame() {
 
     const game = createGame(shuffle([playerA, playerB, playerC]));
 
-    await runGame(game, 3);
+    await runGame(game, 100);
 }
 
 export async function runGame(game: State, maxSteps: number = 1000) {
