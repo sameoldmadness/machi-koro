@@ -1,6 +1,7 @@
 import { runGame } from './engine';
 import { cogStrategy, shopStrategy } from './strategy';
-import { printtt, shuffle, createGame, createPlayer, roll, buy, playerHasWon, dump, enableLogging } from './utils';
+import { shuffle, createGame, createPlayer, dump } from './utils';
+import logger from './logger';
 
 let wins = {
     'A': 0,
@@ -10,7 +11,7 @@ let wins = {
 
 async function main() {
     for (let j = 0; j < 10000; j += 1) {
-        printtt(`\n=== Game ${j} ===`);
+        logger.info(`\n=== Game ${j} ===`);
 
         const playerA = createPlayer('A', cogStrategy);
         const playerB = createPlayer('B', shopStrategy);
@@ -22,7 +23,6 @@ async function main() {
 
         dump(game);
     }
-    enableLogging();
 
     let winsWithPercentages = {
         'A': `${wins['A']} (${(wins['A'] / 10000 * 100).toFixed(2)}%)`,

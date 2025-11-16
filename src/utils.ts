@@ -24,7 +24,7 @@ export function createGame(players: Player[]): State {
 }
 
 export function dump(x: any) {
-    printtt(JSON.stringify(x, null, 2));
+    logger.info(JSON.stringify(x, null, 2));
 }
 
 export function canRollTwoDice(player: Player): boolean {
