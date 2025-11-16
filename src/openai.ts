@@ -2,12 +2,19 @@ import OpenAI from "openai";
 import { State } from "./game";
 import { printtt } from "./utils";
 
-const client = new OpenAI();
+let client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+    if (!client) {
+        client = new OpenAI();
+    }
+    return client;
+}
 
 export async function buy(game: State) {
     printtt(`OpenAI buy request`);
 
-    const response = await client.responses.create({
+    const response = await getClient().responses.create({
         model: "gpt-5",
         reasoning: { effort: "high" },
         instructions: `

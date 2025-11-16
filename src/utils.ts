@@ -50,18 +50,46 @@ export function roll(dice: number): [number, number[]] {
 }
 
 export function rollOne(): number {
-    return Math.round(Math.random() * 6);
+    return Math.floor(Math.random() * 6) + 1;
 }
 
 export function buy(name: Name | AmusementName, player: Player, game: State) {
-    if (amusementCards.find(v => v.name === name)) {
+    const amusementCard = amusementCards.find(v => v.name === name);
+
+    if (amusementCard) {
+        // Validate amusement card purchase
+        if (player.budget < amusementCard.cost) {
+            printtt(`Player cannot afford ${name}`);
+            return;
+        }
+        if (player.amusementDeck[name as AmusementName]) {
+            printtt(`Player already owns ${name}`);
+            return;
+        }
+
         player.amusementDeck[name as AmusementName] = true;
-        player.budget -= amusementCards.find(v => v.name === name)!.cost;
+        player.budget -= amusementCard.cost;
+        return;
+    }
+
+    // Validate regular card purchase
+    const cost = getCost(name as Name);
+    if (player.budget < cost) {
+        printtt(`Player cannot afford ${name}`);
+        return;
+    }
+    if (game.deck[name as Name] <= 0) {
+        printtt(`${name} is out of stock`);
+        return;
+    }
+    const card = cards.find(v => v.name === name);
+    if (card?.singular && player.deck[name as Name]) {
+        printtt(`Player already owns ${name}`);
         return;
     }
 
     game.deck[name as Name] -= 1;
-    player.budget -= getCost(name as Name);
+    player.budget -= cost;
     player.deck[name as Name] = player.deck[name as Name] || 0;
     player.deck[name as Name]! += 1;
 }

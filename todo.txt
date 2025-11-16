@@ -8,9 +8,9 @@ TODO
 + support singular cards
 + implement purple cards
 
-- better strategy
-- strategy comparison framework
+- better strategy #ai
+- strategy comparison framework #ai
 
-- unit tests
-- checks on both strategy and host sides
-- split into modules clean up repetition
+- unit tests #ai
+- checks on both strategy and host sides #ai
+- split into modules clean up repetition #ai

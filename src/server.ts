@@ -45,36 +45,52 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
         const { id } = req.params;
         const { action, payload } = req.body ?? {};
 
+        if (!action || typeof action !== 'string') {
+            return res.status(400).json({ error: 'Request body must include "action" (string) and optional "payload".' });
+        }
+
         const strategy = defaultStrategy;
         let response;
 
         switch (action) {
             case 'roll': {
                 const { game } = payload as { game: State };
+                // Ensure activePlayerIndex is valid
+                if (game.activePlayerIndex < 0) {
+                    game.activePlayerIndex = 0;
+                }
                 response = await strategy.roll(game);
                 break;
             }
             case 'reroll': {
                 const { previousRoll, game } = payload as { previousRoll: number; game: State };
+                // Ensure activePlayerIndex is valid
+                if (game.activePlayerIndex < 0) {
+                    game.activePlayerIndex = 0;
+                }
                 response = await strategy.reroll(previousRoll, game);
                 break;
             }
             case 'buy': {
                 const { game } = payload as { game: State };
+                // Ensure activePlayerIndex is valid
+                if (game.activePlayerIndex < 0) {
+                    game.activePlayerIndex = 0;
+                }
                 response = await strategy.buy(game);
                 break;
             }
             case 'swap': {
                 const { game } = payload as { game: State };
+                // Ensure activePlayerIndex is valid
+                if (game.activePlayerIndex < 0) {
+                    game.activePlayerIndex = 0;
+                }
                 response = await strategy.swap(game);
                 break;
             }
             default:
                 return res.status(400).json({ error: `Unknown action "${action}"` });
-        }
-
-        if (!action || typeof action !== 'string') {
-            return res.status(400).json({ error: 'Request body must include "action" (string) and optional "payload".' });
         }
 
         return res.json({
