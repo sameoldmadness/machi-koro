@@ -1,6 +1,7 @@
 import { amusementCards, AmusementName, Name, State, Strategy } from "./game";
 import { buy } from "./openai";
 import { canBuy, canRollTwoDice } from "./utils";
+import logger from "./logger";
 
 
 
@@ -17,11 +18,14 @@ export const defaultStrategy: Strategy = {
     },
     buy: async (game: State) => {
         const player = game.players[game.activePlayerIndex];
+        logger.debug(`defaultStrategy.buy: Player ${player.name} evaluating purchase options with ${player.budget} coins`);
+
         const amusementsToBuy: AmusementName[] = ['Terminal', 'Shopping Center', 'Amusement Park', 'Radio Tower'];
 
         for (const amusementToBuy of amusementsToBuy) {
             const amusementCard = amusementCards.find(v => v.name === amusementToBuy)!;
             if (!player.amusementDeck[amusementToBuy] && amusementCard.cost <= player.budget) {
+                logger.debug(`defaultStrategy.buy: Choosing ${amusementToBuy}`);
                 return amusementToBuy;
             }
         }
@@ -33,10 +37,12 @@ export const defaultStrategy: Strategy = {
 
         for (const cardToBuy of cardsToBuy) {
             if (canBuy(cardToBuy, player, game)) {
+                logger.debug(`defaultStrategy.buy: Choosing ${cardToBuy}`);
                 return cardToBuy;
             }
         }
 
+        logger.debug(`defaultStrategy.buy: No affordable options available`);
         return null;
     },
     swap: async (game: State) => {
@@ -54,11 +60,14 @@ export const grainStrategy: Strategy = {
         return defaultStrategy.reroll(prev, game);
     },
     buy: async (game: State) => {
-        // buy Grain Field if possible until you have 4
         const player = game.players[game.activePlayerIndex];
+        logger.debug(`grainStrategy.buy: Player ${player.name} evaluating grain-focused strategy with ${player.budget} coins`);
+
+        // buy Grain Field if possible until you have 4
         if (canBuy('Grain Field', player, game)) {
             const currentCount = player.deck['Grain Field'] || 0;
             if (currentCount < 4) {
+                logger.debug(`grainStrategy.buy: Buying Grain Field (${currentCount}/4)`);
                 return 'Grain Field';
             }
         }
@@ -66,6 +75,7 @@ export const grainStrategy: Strategy = {
         if (!player.amusementDeck['Terminal']) {
             const terminalCard = amusementCards.find(v => v.name === 'Terminal')!;
             if (terminalCard.cost <= player.budget) {
+                logger.debug(`grainStrategy.buy: Buying Terminal`);
                 return 'Terminal';
             }
         }
@@ -73,6 +83,7 @@ export const grainStrategy: Strategy = {
         if (canBuy('Fruit Market', player, game)) {
             const currentCount = player.deck['Fruit Market'] || 0;
             if (currentCount < 4) {
+                logger.debug(`grainStrategy.buy: Buying Fruit Market (${currentCount}/4)`);
                 return 'Fruit Market';
             }
         }
@@ -80,6 +91,7 @@ export const grainStrategy: Strategy = {
         if (canBuy('Apple Garden', player, game)) {
             const currentCount = player.deck['Apple Garden'] || 0;
             if (currentCount < 2) {
+                logger.debug(`grainStrategy.buy: Buying Apple Garden (${currentCount}/2)`);
                 return 'Apple Garden';
             }
         }
@@ -88,6 +100,7 @@ export const grainStrategy: Strategy = {
         for (const amusementToBuy of amusementsToBuy) {
             const amusementCard = amusementCards.find(v => v.name === amusementToBuy)!;
             if (!player.amusementDeck[amusementToBuy] && amusementCard.cost <= player.budget) {
+                logger.debug(`grainStrategy.buy: Buying ${amusementToBuy}`);
                 return amusementToBuy;
             }
         }
@@ -95,10 +108,12 @@ export const grainStrategy: Strategy = {
         const cardsToBuy: Name[] = ['Grain Field', 'Fruit Market', 'Apple Garden'];
         for (const cardToBuy of cardsToBuy) {
             if (canBuy(cardToBuy, player, game)) {
+                logger.debug(`grainStrategy.buy: Buying ${cardToBuy} (fallback)`);
                 return cardToBuy;
             }
         }
         // fallback to default strategy
+        logger.debug(`grainStrategy.buy: Falling back to default strategy`);
         return defaultStrategy.buy(game);
     },
     swap: async (game: State) => {
@@ -115,15 +130,19 @@ export const shopStrategy: Strategy = {
     },
     buy: async (game: State) => {
         const player = game.players[game.activePlayerIndex];
+        logger.debug(`shopStrategy.buy: Player ${player.name} evaluating shop-focused strategy with ${player.budget} coins`);
+
         if (canBuy('Shop', player, game)) {
             const currentCount = player.deck['Shop'] || 0;
             if (currentCount < 6) {
+                logger.debug(`shopStrategy.buy: Buying Shop (${currentCount}/6)`);
                 return 'Shop';
             }
         }
         if (canBuy('Cafe', player, game)) {
             const currentCount = player.deck['Cafe'] || 0;
             if (currentCount < 0) {
+                logger.debug(`shopStrategy.buy: Buying Cafe (${currentCount}/0)`);
                 return 'Cafe';
             }
         }
@@ -134,6 +153,7 @@ export const shopStrategy: Strategy = {
 
         const terminalCard = amusementCards.find(v => v.name === 'Shopping Center')!;
         if (!player.amusementDeck['Shopping Center'] && terminalCard.cost <= player.budget) {
+            logger.debug(`shopStrategy.buy: Buying Shopping Center`);
             return 'Shopping Center';
         }
 
@@ -141,10 +161,12 @@ export const shopStrategy: Strategy = {
         for (const amusementToBuy of amusementsToBuy) {
             const amusementCard = amusementCards.find(v => v.name === amusementToBuy)!;
             if (!player.amusementDeck[amusementToBuy] && amusementCard.cost <= player.budget) {
+                logger.debug(`shopStrategy.buy: Buying ${amusementToBuy}`);
                 return amusementToBuy;
             }
         }
 
+        logger.debug(`shopStrategy.buy: No affordable options available`);
         return null;
     },
     swap: async (game: State) => {
@@ -161,21 +183,26 @@ export const cogStrategy: Strategy = {
     },
     buy: async (game: State) => {
         const player = game.players[game.activePlayerIndex];
+        logger.debug(`cogStrategy.buy: Player ${player.name} evaluating cog-focused strategy with ${player.budget} coins`);
+
         if (canBuy('Forest', player, game)) {
             const currentCount = player.deck['Forest'] || 0;
             if (currentCount < 4) {
+                logger.debug(`cogStrategy.buy: Buying Forest (${currentCount}/4)`);
                 return 'Forest';
             }
         }
         if (!player.amusementDeck['Terminal']) {
             const terminalCard = amusementCards.find(v => v.name === 'Terminal')!;
             if (terminalCard.cost <= player.budget) {
+                logger.debug(`cogStrategy.buy: Buying Terminal`);
                 return 'Terminal';
             }
         }
         if (canBuy('Furniture Factory', player, game)) {
             const currentCount = player.deck['Furniture Factory'] || 0;
             if (currentCount < 4) {
+                logger.debug(`cogStrategy.buy: Buying Furniture Factory (${currentCount}/4)`);
                 return 'Furniture Factory';
             }
         }
@@ -184,10 +211,12 @@ export const cogStrategy: Strategy = {
         for (const amusementToBuy of amusementsToBuy) {
             const amusementCard = amusementCards.find(v => v.name === amusementToBuy)!;
             if (!player.amusementDeck[amusementToBuy] && amusementCard.cost <= player.budget) {
+                logger.debug(`cogStrategy.buy: Buying ${amusementToBuy}`);
                 return amusementToBuy;
             }
         }
 
+        logger.debug(`cogStrategy.buy: No affordable options available`);
         return null;
     },
     swap: async (game: State) => {

@@ -1,4 +1,5 @@
 import { amusementCards, AmusementName, cards, deck, Name, Player, startingAmusementDeck, startingBudget, startingDeck, State, Strategy } from "./game";
+import logger, { getBrowserLogs, clearBrowserLogs } from "./logger";
 
 export function clone<T>(x: T): T {
     return JSON.parse(JSON.stringify(x));
@@ -59,32 +60,33 @@ export function buy(name: Name | AmusementName, player: Player, game: State) {
     if (amusementCard) {
         // Validate amusement card purchase
         if (player.budget < amusementCard.cost) {
-            printtt(`Player cannot afford ${name}`);
+            logger.warn(`Player cannot afford ${name}`);
             return;
         }
         if (player.amusementDeck[name as AmusementName]) {
-            printtt(`Player already owns ${name}`);
+            logger.warn(`Player already owns ${name}`);
             return;
         }
 
         player.amusementDeck[name as AmusementName] = true;
         player.budget -= amusementCard.cost;
+        logger.debug(`Player purchased ${name} for ${amusementCard.cost} coins`);
         return;
     }
 
     // Validate regular card purchase
     const cost = getCost(name as Name);
     if (player.budget < cost) {
-        printtt(`Player cannot afford ${name}`);
+        logger.warn(`Player cannot afford ${name}`);
         return;
     }
     if (game.deck[name as Name] <= 0) {
-        printtt(`${name} is out of stock`);
+        logger.warn(`${name} is out of stock`);
         return;
     }
     const card = cards.find(v => v.name === name);
     if (card?.singular && player.deck[name as Name]) {
-        printtt(`Player already owns ${name}`);
+        logger.warn(`Player already owns ${name}`);
         return;
     }
 
@@ -92,6 +94,7 @@ export function buy(name: Name | AmusementName, player: Player, game: State) {
     player.budget -= cost;
     player.deck[name as Name] = player.deck[name as Name] || 0;
     player.deck[name as Name]! += 1;
+    logger.debug(`Player purchased ${name} for ${cost} coins`);
 }
 
 export function getPlayersToProcess(activePlayerIndex: number, players: Player[]): Player[] {
@@ -104,28 +107,21 @@ export function playerHasWon(player: Player): boolean {
 }
 
 
-let loggingEnabled = true;
-
-export function enableLogging() {
-    loggingEnabled = true;
-}
-
-export function printtt(msg: string) {
-    logAdd(msg);
-    if (!loggingEnabled) {
-        return;
-    }
-    console.log(msg);
-}
-
-let logMessages: string[] = [];
+// Legacy logging functions for backward compatibility with tests
 export function logAdd(msg: string) {
-    logMessages.push(msg);
+    // Messages are now automatically added to browser logs by the logger
+    logger.info(msg);
 }
+
 export function logFlush() {
-    const res = logMessages.slice();
-    logMessages = [];
-    return res;
+    const logs = getBrowserLogs();
+    clearBrowserLogs();
+    return logs;
+}
+
+// Deprecated: use logger.info() instead
+export function printtt(msg: string) {
+    logger.info(msg);
 }
 
 export function shuffle(array: Player[]) {

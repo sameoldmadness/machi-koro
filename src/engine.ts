@@ -1,57 +1,68 @@
 import { cards, Player, State } from "./game";
 import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
-import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, printtt, roll, shuffle } from "./utils";
+import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll, shuffle } from "./utils";
+import logger from "./logger";
 
 export async function initGame() {
+    logger.info('=== Starting new game ===');
     const playerA = createPlayer('A', cogStrategy);
     const playerB = createPlayer('B', grainStrategy);
     const playerC = createPlayer('C', shopStrategy);
 
+    logger.debug(`Players: ${playerA.name} (cogStrategy), ${playerB.name} (grainStrategy), ${playerC.name} (shopStrategy)`);
+
     const game = createGame(shuffle([playerA, playerB, playerC]));
+    logger.info(`Player order: ${game.players.map(p => p.name).join(' → ')}`);
 
     await runGame(game, 100);
 }
 
 export async function runGame(game: State, maxSteps: number = 1000) {
+    logger.debug(`Starting game run with max ${maxSteps} steps`);
+
     for (let i = 0; i < maxSteps; i += 1) {
-        printtt(`Step number ${i}`);
+        logger.info(`Step number ${i}`);
         game.activePlayerIndex += 1;
         game.activePlayerIndex %= game.players.length;
         let player = game.players[game.activePlayerIndex];
-        printtt(`Active player: ${player.name}`);
+        logger.info(`Active player: ${player.name}`);
+        logger.debug(`${player.name}'s budget: ${player.budget} coins`);
+
         let nDice = await player.strategy.roll(game);
-        printtt(`Player decides to roll ${nDice} dice(s)`);
+        logger.info(`Player decides to roll ${nDice} dice(s)`);
         let [res, rolls] = roll(nDice);
-        printtt(`Player rolled ${res}`);
+        logger.info(`Player rolled ${res}` + (nDice > 1 ? ` (${rolls.join('+')})` : ''));
+
         // TODO connect ths with reroll strategy and amusement cards
         if (player.amusementDeck['Radio Tower']) {
+            logger.debug(`${player.name} has Radio Tower - checking for reroll`);
             let nDice = await player.strategy.reroll(res, game);
             if (nDice) {
                 [res, rolls] = roll(nDice);
-                printtt(`Player rerolled ${res}`);
+                logger.info(`Player rerolled ${res}` + (nDice > 1 ? ` (${rolls.join('+')})` : ''));
             } else {
-                printtt(`Player decides not to reroll`);
+                logger.info(`Player decides not to reroll`);
             }
         }
         await process(res, game);
         if (rolls[0] === rolls[1] && player.amusementDeck['Amusement Park']) {
-            printtt(`Player rolled double and gets to roll again`);
+            logger.info(`Player rolled double and gets to roll again`);
             let [res2, rolls2] = roll(nDice);
-            printtt(`Player rolled ${res2}`);
+            logger.info(`Player rolled ${res2}` + (nDice > 1 ? ` (${rolls2.join('+')})` : ''));
             process(res2, game);
             // TODO allow to reroll here if not rerolled before
         }
-        printtt(`Player has ${player.budget} coins`);
+        logger.info(`Player has ${player.budget} coins`);
         let purchase = await player.strategy.buy(game);
         if (purchase) {
-            printtt(`Player decides to buy ${purchase}`);
+            logger.info(`Player decides to buy ${purchase}`);
             buy(purchase, player, game);
         } else {
-            printtt(`Player decides to skip`);
+            logger.info(`Player decides to skip`);
         }
         if (playerHasWon(player)) {
-            // wins[player.name as 'A' | 'B' | 'C'] += 1;
-            printtt(`Player ${player.name} has won the game!`);
+            logger.info(`🎉 Player ${player.name} has won the game!`);
+            logger.debug(`Final scores: ${game.players.map(p => `${p.name}: ${p.budget} coins`).join(', ')}`);
             break;
         }
     }
@@ -83,6 +94,7 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                 if (player.amusementDeck['Shopping Center']) {
                     if (card.kind === 'bread' || card.kind === 'coffee') {
                         if (cardIncome) {
+                            logger.debug(`Shopping Center bonus: +1 coin for ${cardName}`);
                             cardIncome += 1;
                         }
                     }
@@ -99,9 +111,14 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                         })
                         .reduce((a, [_, cnt]) => a + cnt, 0);
                     income += (kindCount * mult!) * count;
+                    logger.debug(`${cardName} multiplier: ${kindCount} ${kind}(s) × ${mult} × ${count} = ${(kindCount * mult!) * count} coins`);
                 }
             }
-            player.budget += income;
+
+            if (income > 0) {
+                player.budget += income;
+                logger.debug(`${player.name} earned ${income} coins from ${count}x ${cardName} (${card.color})`);
+            }
 
             if (card.specialRule) {
                 switch (card.specialRule) {
@@ -109,12 +126,14 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                         // each other player gives 2 coins to this player
                         // find all players that are not the current player
                         let nonActivePlayers = game.players.filter(p => p !== player);
+                        let totalTaken = 0;
                         for (const otherPlayer of nonActivePlayers) {
                             let payment = Math.min(2, otherPlayer.budget);
                             otherPlayer.budget -= payment;
                             player.budget += payment;
+                            totalTaken += payment;
                         }
-                        printtt(`Player ${player.name} takes 2 coins from every other player`);
+                        logger.info(`Player ${player.name} takes ${totalTaken} coins from other players (${cardName})`);
                         break;
                     case 'take_5_coins_from_one_player':
                         // choose one player to take 5 coins from
@@ -123,30 +142,30 @@ async function processPlayer(res: number, player: Player, isActivePlayer: boolea
                         let payment2 = Math.min(5, richestPlayer.budget);
                         richestPlayer.budget -= payment2;
                         player.budget += payment2;
-                        printtt(`Player ${player.name} takes ${payment2} coins from player ${richestPlayer.name}`);
+                        logger.info(`Player ${player.name} takes ${payment2} coins from player ${richestPlayer.name} (${cardName})`);
                         break;
                     case 'switch_1_non_tower_card_with_one_player':
                         let result = await player.strategy.swap(game);
                         if (result === null) {
-                            printtt(`Player ${player.name} decided not to swap cards`);
+                            logger.info(`Player ${player.name} decided not to swap cards`);
                             break;
                         } else {
                             let { give, take, otherPlayerIndex } = result;
                             let otherPlayer = game.players[otherPlayerIndex!];
                             if (cards.find(v => v.name === give)?.color === 'purple' ||
                                 cards.find(v => v.name === take)?.color === 'purple') {
-                                printtt(`Player ${player.name} cannot swap tower cards`);
+                                logger.warn(`Player ${player.name} cannot swap tower cards`);
                                 break;
                             }
                             if ((player.deck[give] || 0) < 1) {
-                                printtt(`Player ${player.name} does not have card ${give} to give`);
+                                logger.warn(`Player ${player.name} does not have card ${give} to give`);
                                 break;
                             }
                             player.deck[give]! -= 1;
                             otherPlayer.deck[give] = (otherPlayer.deck[give] || 0) + 1;
                             otherPlayer.deck[take]! -= 1;
                             player.deck[take] = (player.deck[take] || 0) + 1;
-                            printtt(`Player ${player.name} swapped card ${give} with player ${otherPlayer.name} for card ${take}`);
+                            logger.info(`Player ${player.name} swapped ${give} with player ${otherPlayer.name} for ${take}`);
                         }
 
                         break;

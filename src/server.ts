@@ -5,6 +5,7 @@ import { defaultStrategy } from './strategy';
 import { State } from './game';
 import { initGame } from './engine';
 import { logFlush } from './utils';
+import logger, { getBrowserLogs } from './logger';
 
 type ActionName = string;
 type AnyPayload = unknown;
@@ -18,17 +19,28 @@ const app = express();
 app.use(express.json());
 
 app.get('/server', async (_req: Request, res: Response) => {
+    logger.info('Starting game via /server endpoint');
     await initGame();
-    res.json({ status: 'ok', time: new Date().toISOString(), log: logFlush() });
+    const logs = logFlush();
+    logger.info('Game completed successfully');
+    res.json({ status: 'ok', time: new Date().toISOString(), log: logs });
 });
 
 app.post('/server', (req: Request<{}, {}, AgentAction>, res: Response) => {
     const { action, payload } = req.body ?? {};
     if (!action || typeof action !== 'string') {
+        logger.warn('Invalid /server POST request: missing action');
         return res.status(400).json({ error: 'Request body must include "action" (string) and optional "payload".' });
     }
 
+    logger.debug(`Server action received: ${action}`);
     return res.json({ handledBy: 'server', action, payload });
+});
+
+// Endpoint to get browser logs
+app.get('/logs', (_req: Request, res: Response) => {
+    const logs = getBrowserLogs();
+    res.json({ logs, count: logs.length });
 });
 
 /**
@@ -46,8 +58,11 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
         const { action, payload } = req.body ?? {};
 
         if (!action || typeof action !== 'string') {
+            logger.warn(`Invalid agent request from agent ${id}: missing action`);
             return res.status(400).json({ error: 'Request body must include "action" (string) and optional "payload".' });
         }
+
+        logger.debug(`Agent ${id} action: ${action}`);
 
         const strategy = defaultStrategy;
         let response;
@@ -60,6 +75,7 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
                     game.activePlayerIndex = 0;
                 }
                 response = await strategy.roll(game);
+                logger.debug(`Agent ${id} roll result: ${response}`);
                 break;
             }
             case 'reroll': {
@@ -69,6 +85,7 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
                     game.activePlayerIndex = 0;
                 }
                 response = await strategy.reroll(previousRoll, game);
+                logger.debug(`Agent ${id} reroll result: ${response}`);
                 break;
             }
             case 'buy': {
@@ -78,6 +95,7 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
                     game.activePlayerIndex = 0;
                 }
                 response = await strategy.buy(game);
+                logger.debug(`Agent ${id} buy result: ${response}`);
                 break;
             }
             case 'swap': {
@@ -87,9 +105,11 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
                     game.activePlayerIndex = 0;
                 }
                 response = await strategy.swap(game);
+                logger.debug(`Agent ${id} swap result: ${response}`);
                 break;
             }
             default:
+                logger.warn(`Unknown action "${action}" from agent ${id}`);
                 return res.status(400).json({ error: `Unknown action "${action}"` });
         }
 
@@ -102,14 +122,17 @@ app.post('/agent/:id', async (req: Request<{ id: string }, {}, AgentAction>, res
             processedAt: new Date().toISOString(),
         });
     } catch (error) {
-        console.error('Error processing agent action:', error);
+        logger.error(`Error processing agent action: ${error}`);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 const port = Number(process.env.PORT) || 3000;
 if (require.main === module) {
-    app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
+    app.listen(port, () => {
+        logger.info(`🚀 Server started on http://localhost:${port}`);
+        logger.info(`📊 Logs endpoint: http://localhost:${port}/logs`);
+    });
 }
 
 export default app;

@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { State } from "./game";
-import { printtt } from "./utils";
+import logger from "./logger";
 
 let client: OpenAI | null = null;
 
@@ -12,7 +12,7 @@ function getClient(): OpenAI {
 }
 
 export async function buy(game: State) {
-    printtt(`OpenAI buy request`);
+    logger.debug(`OpenAI buy request initiated`);
 
     const response = await getClient().responses.create({
         model: "gpt-5",
@@ -36,13 +36,15 @@ export async function buy(game: State) {
         input: JSON.stringify(game),
     });
 
-    printtt(`OpenAI response: ${JSON.stringify(response.output_text, null, 2)}`);
+    logger.debug(`OpenAI response received: ${JSON.stringify(response.output_text, null, 2)}`);
 
     const { result } = JSON.parse(response.output_text!);
 
     if (result === "skip") {
+        logger.debug('OpenAI decided to skip purchase');
         return null;
     }
 
+    logger.debug(`OpenAI decided to buy: ${result}`);
     return result;
 }
