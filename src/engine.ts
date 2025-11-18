@@ -138,63 +138,75 @@ async function processPlayer(res: number, diceRoll: DiceRoll, player: Player, is
         }
     }
 
-    // Handle special rules (purple cards) - keep original logic for now
-    for (const [cardName, count] of Object.entries(player.deck)) {
-        const card = cards.find(v => v.name === cardName)!;
+    // Handle special abilities (purple cards) - only for active player
+    if (isActivePlayer) {
+        const purpleCards = domainPlayer.getEstablishmentCards().filter(
+            card => card.color === 'purple' && card.activatesOn(diceRoll.total)
+        );
 
-        const isGreenOrPurple = (card.color === 'green' || card.color === 'purple') && isActivePlayer;
+        for (const purpleCard of purpleCards) {
+            if (!purpleCard.specialRule) continue;
 
-        if (card.match.includes(res) && isGreenOrPurple) {
-            if (card.specialRule) {
-                switch (card.specialRule) {
-                    case 'take_2_coins_from_every_player':
-                        // each other player gives 2 coins to this player
-                        // find all players that are not the current player
-                        let nonActivePlayers = game.players.filter(p => p !== player);
-                        let totalTaken = 0;
-                        for (const otherPlayer of nonActivePlayers) {
-                            let payment = Math.min(2, otherPlayer.budget);
-                            otherPlayer.budget -= payment;
-                            player.budget += payment;
-                            totalTaken += payment;
-                        }
-                        logger.info(`Player ${player.name} takes ${totalTaken} coins from other players (${cardName})`);
-                        break;
-                    case 'take_5_coins_from_one_player':
-                        // choose one player to take 5 coins from
-                        let nonActivePlayers2 = game.players.filter(p => p !== player);
-                        let richestPlayer = nonActivePlayers2.reduce((a, b) => a.budget > b.budget ? a : b);
-                        let payment2 = Math.min(5, richestPlayer.budget);
-                        richestPlayer.budget -= payment2;
-                        player.budget += payment2;
-                        logger.info(`Player ${player.name} takes ${payment2} coins from player ${richestPlayer.name} (${cardName})`);
-                        break;
-                    case 'switch_1_non_tower_card_with_one_player':
-                        let result = await player.strategy.swap(game);
-                        if (result === null) {
-                            logger.info(`Player ${player.name} decided not to swap cards`);
-                            break;
-                        } else {
-                            let { give, take, otherPlayerIndex } = result;
-                            let otherPlayer = game.players[otherPlayerIndex!];
-                            if (cards.find(v => v.name === give)?.color === 'purple' ||
-                                cards.find(v => v.name === take)?.color === 'purple') {
-                                logger.warn(`Player ${player.name} cannot swap tower cards`);
-                                break;
-                            }
-                            if ((player.deck[give] || 0) < 1) {
-                                logger.warn(`Player ${player.name} does not have card ${give} to give`);
-                                break;
-                            }
-                            player.deck[give]! -= 1;
-                            otherPlayer.deck[give] = (otherPlayer.deck[give] || 0) + 1;
-                            otherPlayer.deck[take]! -= 1;
-                            player.deck[take] = (player.deck[take] || 0) + 1;
-                            logger.info(`Player ${player.name} swapped ${give} with player ${otherPlayer.name} for ${take}`);
-                        }
+            switch (purpleCard.specialRule) {
+                case 'take_2_coins_from_every_player':
+                    // Stadium: Take 2 coins from each other player
+                    const otherPlayers = game.players.filter(p => p !== player);
+                    let totalTaken = 0;
+                    for (const otherPlayer of otherPlayers) {
+                        const payment = Math.min(2, otherPlayer.budget);
+                        otherPlayer.budget -= payment;
+                        player.budget += payment;
+                        totalTaken += payment;
+                    }
+                    logger.info(`${player.name} takes ${totalTaken} coins from other players (${purpleCard.name})`);
+                    break;
 
+                case 'take_5_coins_from_one_player':
+                    // TV Center: Take 5 coins from richest player
+                    const nonActivePlayers = game.players.filter(p => p !== player);
+                    if (nonActivePlayers.length > 0) {
+                        const richestPlayer = nonActivePlayers.reduce((a, b) =>
+                            a.budget > b.budget ? a : b
+                        );
+                        const payment = Math.min(5, richestPlayer.budget);
+                        richestPlayer.budget -= payment;
+                        player.budget += payment;
+                        logger.info(`${player.name} takes ${payment} coins from ${richestPlayer.name} (${purpleCard.name})`);
+                    }
+                    break;
+
+                case 'switch_1_non_tower_card_with_one_player':
+                    // Business Center: Swap a card with another player
+                    const swapResult = await player.strategy.swap(game);
+                    if (swapResult === null) {
+                        logger.info(`${player.name} decided not to swap cards`);
                         break;
-                }
+                    }
+
+                    const { give, take, otherPlayerIndex } = swapResult;
+                    const otherPlayer = game.players[otherPlayerIndex!];
+
+                    // Validate swap: cannot swap purple cards (landmarks)
+                    const giveCard = cards.find(v => v.name === give);
+                    const takeCard = cards.find(v => v.name === take);
+                    if (giveCard?.color === 'purple' || takeCard?.color === 'purple') {
+                        logger.warn(`${player.name} cannot swap tower cards`);
+                        break;
+                    }
+
+                    // Validate player has the card to give
+                    if ((player.deck[give] || 0) < 1) {
+                        logger.warn(`${player.name} does not have card ${give} to give`);
+                        break;
+                    }
+
+                    // Execute swap
+                    player.deck[give]! -= 1;
+                    otherPlayer.deck[give] = (otherPlayer.deck[give] || 0) + 1;
+                    otherPlayer.deck[take]! -= 1;
+                    player.deck[take] = (player.deck[take] || 0) + 1;
+                    logger.info(`${player.name} swapped ${give} with ${otherPlayer.name} for ${take}`);
+                    break;
             }
         }
     }
