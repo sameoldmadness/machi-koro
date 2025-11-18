@@ -318,7 +318,7 @@ describe('engine.ts - Game Engine', () => {
 
       // Player 2 should have taken 1 coin from Player 1 (cafe is red, activates on opponent's turn)
       expect(player2.budget).toBe(1); // Should have exactly 1 coin from Cafe
-      expect(player1.budget).toBe(10); // 10 starting + 1 from Grain Field - 1 to player2's Cafe = 10
+      expect(player1.budget).toBe(9); // 10 starting - 1 to player2's Cafe = 9 (Grain Field doesn't activate on 3)
 
       vi.restoreAllMocks();
     });

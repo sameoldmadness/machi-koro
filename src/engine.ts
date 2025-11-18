@@ -2,6 +2,9 @@ import { cards, Player, State } from "./game";
 import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll, shuffle } from "./utils";
 import logger from "./logger";
+import { DiceRoll } from "./domain/value-objects/DiceRoll";
+import { IncomeCalculator } from "./domain/services/IncomeCalculator";
+import { convertToDomainPlayer } from "./adapters/GameAdapter";
 
 export async function initGame() {
     logger.info('=== Starting new game ===');
@@ -44,12 +47,15 @@ export async function runGame(game: State, maxSteps: number = 1000) {
                 logger.info(`Player decides not to reroll`);
             }
         }
-        await process(res, game);
+        // Create DiceRoll value object for domain logic
+        const diceRoll = DiceRoll.of(rolls.slice(0, nDice));
+        await process(res, diceRoll, game);
         if (rolls[0] === rolls[1] && player.amusementDeck['Amusement Park']) {
             logger.info(`Player rolled double and gets to roll again`);
             let [res2, rolls2] = roll(nDice);
             logger.info(`Player rolled ${res2}` + (nDice > 1 ? ` (${rolls2.join('+')})` : ''));
-            process(res2, game);
+            const diceRoll2 = DiceRoll.of(rolls2.slice(0, nDice));
+            process(res2, diceRoll2, game);
             // TODO allow to reroll here if not rerolled before
         }
         logger.info(`Player has ${player.budget} coins`);
@@ -68,58 +74,79 @@ export async function runGame(game: State, maxSteps: number = 1000) {
     }
 }
 
-async function process(res: number, game: State) {
+async function process(res: number, diceRoll: DiceRoll, game: State) {
     const playersToProcess = getPlayersToProcess(game.activePlayerIndex, game.players);
 
     for (const [index, player] of playersToProcess.entries()) {
         const isActivePlayer = index === 0; // The first player in the reordered list is the active player
-        await processPlayer(res, player, isActivePlayer, game);
+        await processPlayer(res, diceRoll, player, isActivePlayer, game);
     }
 }
 
-async function processPlayer(res: number, player: Player, isActivePlayer: boolean, game: State) {
-    for (const [cardName, count] of Object.entries(player.deck)) {
-        const card = cards.find(v => v.name === cardName)!;
+async function processPlayer(res: number, diceRoll: DiceRoll, player: Player, isActivePlayer: boolean, game: State) {
+    // Convert to domain player for income calculation
+    const domainPlayer = convertToDomainPlayer(player);
+    const activePlayer = game.players[game.activePlayerIndex];
+    const domainActivePlayer = convertToDomainPlayer(activePlayer);
 
-        // Determine if the card should be processed based on its color and player type
-        const isGreenOrPurple = (card.color === 'green' || card.color === 'purple') && isActivePlayer;
-        const isBlue = card.color === 'blue';
-        const isRed = card.color === 'red' && !isActivePlayer;
-
-        if (card.match.includes(res) && (isGreenOrPurple || isBlue || isRed)) {
-            let income = 0;
-            if (card.income) {
+    // Use IncomeCalculator for income logic
+    if (isActivePlayer) {
+        // Active player gets income from green and blue cards
+        const income = IncomeCalculator.calculateIncome(domainPlayer, diceRoll);
+        if (income.getValue() > 0) {
+            player.budget += income.getValue();
+            logger.debug(`${player.name} earned ${income.getValue()} coins from active player cards`);
+        }
+    } else {
+        // Non-active players only get income from blue cards (passive)
+        // calculateIncome() includes green cards too, so we need to manually calculate blue only
+        let passiveIncome = 0;
+        const cards = domainPlayer.getEstablishmentCards();
+        for (const card of cards) {
+            if (card.isPassiveCard() && card.activatesOn(diceRoll.total)) {
                 let cardIncome = card.income;
 
-                if (player.amusementDeck['Shopping Center']) {
-                    if (card.kind === 'bread' || card.kind === 'coffee') {
-                        if (cardIncome) {
-                            logger.debug(`Shopping Center bonus: +1 coin for ${cardName}`);
-                            cardIncome += 1;
-                        }
+                // Apply multipliers if any
+                if (card.multiplier && Object.keys(card.multiplier).length > 0) {
+                    for (const [kind, multiplier] of Object.entries(card.multiplier)) {
+                        const count = domainPlayer.getEstablishmentCountByKind(kind);
+                        cardIncome += count * multiplier;
                     }
                 }
 
-                income += cardIncome * count;
-            }
-            if (card.multiplier) {
-                for (const [kind, mult] of Object.entries(card.multiplier)) {
-                    const kindCount = Object.entries(player.deck)
-                        .filter(([name, _]) => {
-                            const c = cards.find(v => v.name === name)!;
-                            return c.kind === kind;
-                        })
-                        .reduce((a, [_, cnt]) => a + cnt, 0);
-                    income += (kindCount * mult!) * count;
-                    logger.debug(`${cardName} multiplier: ${kindCount} ${kind}(s) × ${mult} × ${count} = ${(kindCount * mult!) * count} coins`);
+                // Apply Shopping Center bonus for bread and coffee cards
+                if (domainPlayer.hasLandmark('Shopping Center')) {
+                    if (card.kind === 'bread' || card.kind === 'coffee') {
+                        cardIncome += 1;
+                    }
                 }
-            }
 
-            if (income > 0) {
-                player.budget += income;
-                logger.debug(`${player.name} earned ${income} coins from ${count}x ${cardName} (${card.color})`);
+                passiveIncome += cardIncome;
             }
+        }
 
+        if (passiveIncome > 0) {
+            player.budget += passiveIncome;
+            logger.debug(`${player.name} earned ${passiveIncome} coins from passive cards`);
+        }
+
+        // Non-active players can steal from active player (red cards)
+        const hostileIncome = IncomeCalculator.calculateHostileIncome(domainPlayer, domainActivePlayer, diceRoll);
+        if (hostileIncome.getValue() > 0) {
+            const stolen = Math.min(hostileIncome.getValue(), activePlayer.budget);
+            activePlayer.budget -= stolen;
+            player.budget += stolen;
+            logger.debug(`${player.name} stole ${stolen} coins from ${activePlayer.name} (red cards)`);
+        }
+    }
+
+    // Handle special rules (purple cards) - keep original logic for now
+    for (const [cardName, count] of Object.entries(player.deck)) {
+        const card = cards.find(v => v.name === cardName)!;
+
+        const isGreenOrPurple = (card.color === 'green' || card.color === 'purple') && isActivePlayer;
+
+        if (card.match.includes(res) && isGreenOrPurple) {
             if (card.specialRule) {
                 switch (card.specialRule) {
                     case 'take_2_coins_from_every_player':
