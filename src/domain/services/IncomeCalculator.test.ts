@@ -127,6 +127,48 @@ describe('IncomeCalculator Domain Service', () => {
     });
   });
 
+  describe('passive income (blue cards only)', () => {
+    it('should calculate passive income from blue cards', () => {
+      const player = Player.create('p1', 'Alice');
+      const roll = DiceRoll.of([1]); // Activates Grain Field (blue)
+
+      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+
+      expect(income.getValue()).toBe(1); // Grain Field gives 1 coin
+    });
+
+    it('should not include green cards in passive income', () => {
+      const player = Player.create('p1', 'Alice');
+      const roll = DiceRoll.of([2]); // Activates Bakery (green)
+
+      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+
+      expect(income.getValue()).toBe(0); // Bakery is green, not passive
+    });
+
+    it('should apply multipliers to passive cards', () => {
+      const player = Player.create('p1', 'Alice');
+      player.addEstablishment('Farm'); // cow (blue, passive)
+      player.addEstablishment('Farm'); // another cow
+      // Player now has 2 cows
+      const roll = DiceRoll.of([2]); // Activates Farm
+
+      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+
+      expect(income.getValue()).toBe(2); // 2 Farms × 1 coin each
+    });
+
+    it('should apply Shopping Center bonus to passive blue cards', () => {
+      const player = Player.create('p1', 'Alice');
+      player.buildLandmark('Shopping Center');
+      const roll = DiceRoll.of([1]); // Activates Grain Field
+
+      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+
+      expect(income.getValue()).toBe(1); // Grain Field doesn't get Shopping Center bonus (not bread/coffee)
+    });
+  });
+
   describe('red card income (from bank on opponent turn)', () => {
     it('should calculate income from Cafe', () => {
       const player = Player.create('p1', 'Alice');

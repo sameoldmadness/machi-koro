@@ -50,6 +50,48 @@ export class IncomeCalculator {
   }
 
   /**
+   * Calculate passive income (blue cards only) for non-active players
+   * Blue cards activate on any player's turn
+   */
+  static calculatePassiveIncome(player: Player, roll: DiceRoll): Money {
+    let totalIncome = 0;
+
+    const establishments = player.getEstablishmentCards();
+
+    for (const card of establishments) {
+      if (!card.isPassiveCard()) {
+        continue;
+      }
+
+      if (!card.activatesOn(roll.total)) {
+        continue;
+      }
+
+      // Calculate base income
+      let cardIncome = card.income;
+
+      // Apply multipliers if any
+      if (card.multiplier && Object.keys(card.multiplier).length > 0) {
+        for (const [kind, multiplier] of Object.entries(card.multiplier)) {
+          const count = player.getEstablishmentCountByKind(kind);
+          cardIncome += count * multiplier;
+        }
+      }
+
+      // Apply Shopping Center bonus for bread and coffee cards
+      if (player.hasLandmark('Shopping Center')) {
+        if (card.kind === 'bread' || card.kind === 'coffee') {
+          cardIncome += 1;
+        }
+      }
+
+      totalIncome += cardIncome;
+    }
+
+    return Money.of(totalIncome);
+  }
+
+  /**
    * Calculate income from red cards for a player on opponent's turn
    * Red cards give income from the bank when other players roll
    */

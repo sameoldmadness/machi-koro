@@ -49,13 +49,13 @@ export async function runGame(game: State, maxSteps: number = 1000) {
         }
         // Create DiceRoll value object for domain logic
         const diceRoll = DiceRoll.of(rolls.slice(0, nDice));
-        await process(res, diceRoll, game);
+        await process(diceRoll, game);
         if (rolls[0] === rolls[1] && player.amusementDeck['Amusement Park']) {
             logger.info(`Player rolled double and gets to roll again`);
             let [res2, rolls2] = roll(nDice);
             logger.info(`Player rolled ${res2}` + (nDice > 1 ? ` (${rolls2.join('+')})` : ''));
             const diceRoll2 = DiceRoll.of(rolls2.slice(0, nDice));
-            process(res2, diceRoll2, game);
+            process(diceRoll2, game);
             // TODO allow to reroll here if not rerolled before
         }
         logger.info(`Player has ${player.budget} coins`);
@@ -74,16 +74,16 @@ export async function runGame(game: State, maxSteps: number = 1000) {
     }
 }
 
-async function process(res: number, diceRoll: DiceRoll, game: State) {
+async function process(diceRoll: DiceRoll, game: State) {
     const playersToProcess = getPlayersToProcess(game.activePlayerIndex, game.players);
 
     for (const [index, player] of playersToProcess.entries()) {
         const isActivePlayer = index === 0; // The first player in the reordered list is the active player
-        await processPlayer(res, diceRoll, player, isActivePlayer, game);
+        await processPlayer(diceRoll, player, isActivePlayer, game);
     }
 }
 
-async function processPlayer(res: number, diceRoll: DiceRoll, player: Player, isActivePlayer: boolean, game: State) {
+async function processPlayer(diceRoll: DiceRoll, player: Player, isActivePlayer: boolean, game: State) {
     // Convert to domain player for income calculation
     const domainPlayer = convertToDomainPlayer(player);
     const activePlayer = game.players[game.activePlayerIndex];
@@ -98,39 +98,13 @@ async function processPlayer(res: number, diceRoll: DiceRoll, player: Player, is
             logger.debug(`${player.name} earned ${income.getValue()} coins from active player cards`);
         }
     } else {
-        // Non-active players only get income from blue cards (passive)
-        // calculateIncome() includes green cards too, so we need to manually calculate blue only
-        let passiveIncome = 0;
-        const cards = domainPlayer.getEstablishmentCards();
-        for (const card of cards) {
-            if (card.isPassiveCard() && card.activatesOn(diceRoll.total)) {
-                let cardIncome = card.income;
-
-                // Apply multipliers if any
-                if (card.multiplier && Object.keys(card.multiplier).length > 0) {
-                    for (const [kind, multiplier] of Object.entries(card.multiplier)) {
-                        const count = domainPlayer.getEstablishmentCountByKind(kind);
-                        cardIncome += count * multiplier;
-                    }
-                }
-
-                // Apply Shopping Center bonus for bread and coffee cards
-                if (domainPlayer.hasLandmark('Shopping Center')) {
-                    if (card.kind === 'bread' || card.kind === 'coffee') {
-                        cardIncome += 1;
-                    }
-                }
-
-                passiveIncome += cardIncome;
-            }
+        // Non-active players get income from blue cards (passive) and red cards
+        const passiveIncome = IncomeCalculator.calculatePassiveIncome(domainPlayer, diceRoll);
+        if (passiveIncome.getValue() > 0) {
+            player.budget += passiveIncome.getValue();
+            logger.debug(`${player.name} earned ${passiveIncome.getValue()} coins from passive cards`);
         }
 
-        if (passiveIncome > 0) {
-            player.budget += passiveIncome;
-            logger.debug(`${player.name} earned ${passiveIncome} coins from passive cards`);
-        }
-
-        // Non-active players get income from red cards (from the bank)
         const redCardIncome = IncomeCalculator.calculateRedCardIncome(domainPlayer, diceRoll);
         if (redCardIncome.getValue() > 0) {
             player.budget += redCardIncome.getValue();
