@@ -127,66 +127,57 @@ describe('IncomeCalculator Domain Service', () => {
     });
   });
 
-  describe('hostile income (red cards)', () => {
-    it('should calculate steal amount from Cafe', () => {
-      const target = Player.create('p1', 'Alice');
-      target.addEstablishment('Cafe');
-      const active = Player.create('p2', 'Bob');
-      active.addMoney(Money.of(10));
+  describe('red card income (from bank on opponent turn)', () => {
+    it('should calculate income from Cafe', () => {
+      const player = Player.create('p1', 'Alice');
+      player.addEstablishment('Cafe');
       const roll = DiceRoll.of([3]);
 
-      const steal = IncomeCalculator.calculateHostileIncome(target, active, roll);
+      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
 
-      expect(steal.getValue()).toBe(1); // Cafe steals 1 coin
+      expect(income.getValue()).toBe(1); // Cafe gives 1 coin from bank
     });
 
-    it('should calculate steal amount from Restraunt', () => {
-      const target = Player.create('p1', 'Alice');
-      target.addEstablishment('Restraunt');
-      const active = Player.create('p2', 'Bob');
-      active.addMoney(Money.of(10));
+    it('should calculate income from Restraunt', () => {
+      const player = Player.create('p1', 'Alice');
+      player.addEstablishment('Restraunt');
       const roll = DiceRoll.of([3, 6]); // Total 9
 
-      const steal = IncomeCalculator.calculateHostileIncome(target, active, roll);
+      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
 
-      expect(steal.getValue()).toBe(2); // Restraunt steals 2 coins
+      expect(income.getValue()).toBe(2); // Restraunt gives 2 coins from bank
     });
 
     it('should apply Shopping Center bonus to red cards', () => {
-      const target = Player.create('p1', 'Alice');
-      target.addEstablishment('Cafe');
-      target.buildLandmark('Shopping Center');
-      const active = Player.create('p2', 'Bob');
-      active.addMoney(Money.of(10));
+      const player = Player.create('p1', 'Alice');
+      player.addEstablishment('Cafe');
+      player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([3]);
 
-      const steal = IncomeCalculator.calculateHostileIncome(target, active, roll);
+      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
 
-      expect(steal.getValue()).toBe(2); // Cafe (1) + Shopping Center (1)
+      expect(income.getValue()).toBe(2); // Cafe (1) + Shopping Center (1)
     });
 
-    it('should not steal more than active player has', () => {
-      const target = Player.create('p1', 'Alice');
-      target.addEstablishment('Cafe');
-      target.addEstablishment('Cafe');
-      target.addEstablishment('Cafe');
-      const active = Player.create('p2', 'Bob');
-      // Bob only has 3 coins starting
+    it('should calculate income from multiple red cards', () => {
+      const player = Player.create('p1', 'Alice');
+      player.addEstablishment('Cafe');
+      player.addEstablishment('Cafe');
+      player.addEstablishment('Cafe');
       const roll = DiceRoll.of([3]);
 
-      const steal = IncomeCalculator.calculateHostileIncome(target, active, roll);
+      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
 
-      expect(steal.getValue()).toBe(3); // Limited by Bob's money
+      expect(income.getValue()).toBe(3); // 3 Cafes = 3 coins from bank
     });
 
-    it('should return zero for non-hostile cards', () => {
-      const target = Player.create('p1', 'Alice');
-      const active = Player.create('p2', 'Bob');
+    it('should return zero for non-red cards', () => {
+      const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([1]); // Activates Grain Field (blue, not red)
 
-      const steal = IncomeCalculator.calculateHostileIncome(target, active, roll);
+      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
 
-      expect(steal.getValue()).toBe(0);
+      expect(income.getValue()).toBe(0);
     });
   });
 
@@ -263,7 +254,7 @@ describe('IncomeCalculator Domain Service', () => {
       expect(passivePlayers).not.toContain(charlie);
     });
 
-    it('should identify players with hostile cards', () => {
+    it('should identify players with red cards', () => {
       const alice = Player.create('p1', 'Alice');
       alice.addEstablishment('Cafe');
       const bob = Player.create('p2', 'Bob');
@@ -272,23 +263,23 @@ describe('IncomeCalculator Domain Service', () => {
       const allPlayers = [alice, bob, charlie];
       const roll = DiceRoll.of([3]);
 
-      const hostilePlayers = IncomeCalculator.getHostilePlayers(allPlayers, bob, roll);
+      const redCardPlayers = IncomeCalculator.getRedCardPlayers(allPlayers, bob, roll);
 
-      expect(hostilePlayers.length).toBe(2); // Alice and Charlie
-      expect(hostilePlayers).toContain(alice);
-      expect(hostilePlayers).toContain(charlie);
-      expect(hostilePlayers).not.toContain(bob);
+      expect(redCardPlayers.length).toBe(2); // Alice and Charlie
+      expect(redCardPlayers).toContain(alice);
+      expect(redCardPlayers).toContain(charlie);
+      expect(redCardPlayers).not.toContain(bob);
     });
 
-    it('should exclude active player from hostile players', () => {
+    it('should exclude active player from red card players', () => {
       const alice = Player.create('p1', 'Alice');
       alice.addEstablishment('Cafe');
       const allPlayers = [alice];
       const roll = DiceRoll.of([3]);
 
-      const hostilePlayers = IncomeCalculator.getHostilePlayers(allPlayers, alice, roll);
+      const redCardPlayers = IncomeCalculator.getRedCardPlayers(allPlayers, alice, roll);
 
-      expect(hostilePlayers.length).toBe(0);
+      expect(redCardPlayers.length).toBe(0);
     });
   });
 });

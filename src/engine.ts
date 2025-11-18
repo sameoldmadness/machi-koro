@@ -130,13 +130,11 @@ async function processPlayer(res: number, diceRoll: DiceRoll, player: Player, is
             logger.debug(`${player.name} earned ${passiveIncome} coins from passive cards`);
         }
 
-        // Non-active players can steal from active player (red cards)
-        const hostileIncome = IncomeCalculator.calculateHostileIncome(domainPlayer, domainActivePlayer, diceRoll);
-        if (hostileIncome.getValue() > 0) {
-            const stolen = Math.min(hostileIncome.getValue(), activePlayer.budget);
-            activePlayer.budget -= stolen;
-            player.budget += stolen;
-            logger.debug(`${player.name} stole ${stolen} coins from ${activePlayer.name} (red cards)`);
+        // Non-active players get income from red cards (from the bank)
+        const redCardIncome = IncomeCalculator.calculateRedCardIncome(domainPlayer, diceRoll);
+        if (redCardIncome.getValue() > 0) {
+            player.budget += redCardIncome.getValue();
+            logger.debug(`${player.name} earned ${redCardIncome.getValue()} coins from red cards (from bank)`);
         }
     }
 

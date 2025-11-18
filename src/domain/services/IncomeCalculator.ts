@@ -50,17 +50,16 @@ export class IncomeCalculator {
   }
 
   /**
-   * Calculate income from hostile cards (red cards) for a player
-   * Returns amount that should be stolen from the active player
+   * Calculate income from red cards for a player on opponent's turn
+   * Red cards give income from the bank when other players roll
    */
-  static calculateHostileIncome(
-    targetPlayer: Player,
-    activePlayer: Player,
+  static calculateRedCardIncome(
+    player: Player,
     roll: DiceRoll
   ): Money {
-    let totalSteal = 0;
+    let totalIncome = 0;
 
-    const establishments = targetPlayer.getEstablishmentCards();
+    const establishments = player.getEstablishmentCards();
 
     for (const card of establishments) {
       if (!card.isHostileCard()) {
@@ -71,28 +70,20 @@ export class IncomeCalculator {
         continue;
       }
 
-      // Calculate steal amount
-      let stealAmount = card.income;
+      // Calculate income from bank
+      let cardIncome = card.income;
 
       // Apply Shopping Center bonus
-      if (targetPlayer.hasLandmark('Shopping Center')) {
+      if (player.hasLandmark('Shopping Center')) {
         if (card.kind === 'bread' || card.kind === 'coffee') {
-          stealAmount += 1;
+          cardIncome += 1;
         }
       }
 
-      totalSteal += stealAmount;
+      totalIncome += cardIncome;
     }
 
-    // Can't steal more than active player has
-    const activePlayerMoney = activePlayer.getMoney();
-    const stealMoney = Money.of(totalSteal);
-
-    if (stealMoney.isGreaterThan(activePlayerMoney)) {
-      return activePlayerMoney;
-    }
-
-    return stealMoney;
+    return Money.of(totalIncome);
   }
 
   /**
@@ -154,9 +145,9 @@ export class IncomeCalculator {
   }
 
   /**
-   * Get all players who should steal from active player (hostile cards - red)
+   * Get all players who should receive income from red cards (on opponent's turn)
    */
-  static getHostilePlayers(
+  static getRedCardPlayers(
     allPlayers: Player[],
     activePlayer: Player,
     roll: DiceRoll

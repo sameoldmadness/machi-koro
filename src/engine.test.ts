@@ -299,7 +299,7 @@ describe('engine.ts - Game Engine', () => {
   });
 
   describe('game mechanics - red cards', () => {
-    it('should take coins from active player with red cards', async () => {
+    it('should get coins from bank with red cards on opponent turn', async () => {
       const strategy = createTestStrategy(1, null);
       const player1 = createPlayer('P1', strategy);
       const player2 = createPlayer('P2', strategy);
@@ -316,9 +316,9 @@ describe('engine.ts - Game Engine', () => {
 
       await runGame(game, 1);
 
-      // Player 2 should have taken 1 coin from Player 1 (cafe is red, activates on opponent's turn)
-      expect(player2.budget).toBe(1); // Should have exactly 1 coin from Cafe
-      expect(player1.budget).toBe(9); // 10 starting - 1 to player2's Cafe = 9 (Grain Field doesn't activate on 3)
+      // Player 2 should get 1 coin from bank (cafe is red, activates on opponent's turn)
+      expect(player2.budget).toBe(1); // Should have exactly 1 coin from Cafe (from bank)
+      expect(player1.budget).toBe(10); // 10 starting, no money taken (Grain Field doesn't activate on 3)
 
       vi.restoreAllMocks();
     });
