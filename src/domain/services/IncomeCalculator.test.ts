@@ -105,15 +105,16 @@ describe('IncomeCalculator Domain Service', () => {
       expect(income.getValue()).toBe(2); // Bakery (1) + Shopping Center bonus (1)
     });
 
-    it('should apply Shopping Center bonus to coffee cards', () => {
+    it('should apply Shopping Center bonus to bread cards (green)', () => {
       const player = Player.create('p1', 'Alice');
-      player.addEstablishment('Cafe');
+      // Note: Cafe is red (coffee), so it's excluded from calculateIncome
+      // Shopping Center bonus for coffee cards is tested in calculateRedCardIncome tests
       player.buildLandmark('Shopping Center');
-      const roll = DiceRoll.of([3]); // Activates Bakery and Cafe
+      const roll = DiceRoll.of([3]); // Activates Bakery (green, bread)
 
       const income = IncomeCalculator.calculateIncome(player, roll);
 
-      expect(income.getValue()).toBe(4); // Bakery (1+1) + Cafe (1+1)
+      expect(income.getValue()).toBe(2); // Bakery (1 base + 1 Shopping Center bonus)
     });
 
     it('should not apply Shopping Center bonus to non-bread/coffee cards', () => {

@@ -13,7 +13,11 @@ import { CardRegistry, EstablishmentCard } from '../value-objects/Card';
 export class IncomeCalculator {
   /**
    * Calculate income for a player based on dice roll
-   * Considers card activation numbers, multipliers, and landmark bonuses
+   * Only includes green and blue cards (excludes red and purple)
+   * - Green cards: Active player income
+   * - Blue cards: Passive income (all players)
+   * - Red cards: Excluded (handled by calculateRedCardIncome)
+   * - Purple cards: Excluded (use special abilities, not basic income)
    */
   static calculateIncome(player: Player, roll: DiceRoll): Money {
     let totalIncome = 0;
@@ -21,6 +25,12 @@ export class IncomeCalculator {
     const establishments = player.getEstablishmentCards();
 
     for (const card of establishments) {
+      // Exclude red cards (handled separately by calculateRedCardIncome)
+      // Exclude purple cards (use special abilities, not basic income)
+      if (card.isHostileCard() || card.color === 'purple') {
+        continue;
+      }
+
       if (!card.activatesOn(roll.total)) {
         continue;
       }

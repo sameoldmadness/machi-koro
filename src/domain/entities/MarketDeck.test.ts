@@ -10,7 +10,7 @@ describe('MarketDeck Entity', () => {
       expect(market.id).toBe('market-1');
       expect(market.getAvailableQuantity('Grain Field')).toBe(6);
       expect(market.getAvailableQuantity('Bakery')).toBe(6);
-      expect(market.getAvailableQuantity('Stadium')).toBe(4);
+      expect(market.getAvailableQuantity('Stadium')).toBe(5); // Fixed: was 4, now 5 per game.ts
     });
 
     it('should create market with custom quantities', () => {
@@ -55,7 +55,7 @@ describe('MarketDeck Entity', () => {
     it('should return available quantity', () => {
       const market = MarketDeck.create('market-1');
 
-      expect(market.getAvailableQuantity('Stadium')).toBe(4);
+      expect(market.getAvailableQuantity('Stadium')).toBe(5); // Fixed: was 4, now 5 per game.ts
       expect(market.getAvailableQuantity('Bakery')).toBe(6);
     });
 
@@ -159,7 +159,7 @@ describe('MarketDeck Entity', () => {
       const quantities = market.getAllQuantities();
 
       expect(quantities.get('Grain Field')).toBe(6);
-      expect(quantities.get('Stadium')).toBe(4);
+      expect(quantities.get('Stadium')).toBe(5); // Fixed: was 4, now 5 per game.ts
       expect(quantities.size).toBeGreaterThan(0);
     });
 

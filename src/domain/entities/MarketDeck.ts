@@ -17,9 +17,9 @@ const DEFAULT_CARD_QUANTITIES: Record<EstablishmentName, number> = {
   'Cafe': 6,
   'Shop': 6,
   'Forest': 6,
-  'Business Center': 4,
-  'TV Center': 4,
-  'Stadium': 4,
+  'Business Center': 5, // Fixed: was 4, should be 5 per game.ts
+  'TV Center': 5, // Fixed: was 4, should be 5 per game.ts
+  'Stadium': 5, // Fixed: was 4, should be 5 per game.ts
   'Cheese Factory': 6,
   'Furniture Factory': 6,
   'Mine': 6,
