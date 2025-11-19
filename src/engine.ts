@@ -1,10 +1,11 @@
-import { cards, Player, State } from "./game";
+import { Player, State } from "./game";
 import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll, shuffle } from "./utils";
 import logger from "./logger";
 import { DiceRoll } from "./domain/value-objects/DiceRoll";
 import { IncomeCalculator } from "./domain/services/IncomeCalculator";
 import { SpecialAbilityService } from "./domain/services/SpecialAbilityService";
+import { CardSwapService } from "./domain/services/CardSwapService";
 import { convertToDomainPlayer, convertFromDomainPlayer } from "./adapters/GameAdapter";
 
 export async function initGame() {
@@ -146,35 +147,34 @@ async function processPlayer(diceRoll: DiceRoll, player: Player, isActivePlayer:
 
                 case 'switch_1_non_tower_card_with_one_player':
                     // Business Center: Swap a card with another player
-                    const swapResult = await player.strategy.swap(game);
-                    if (swapResult === null) {
+                    const swapDecision = await player.strategy.swap(game);
+                    if (swapDecision === null) {
                         logger.info(`${player.name} decided not to swap cards`);
                         break;
                     }
 
-                    const { give, take, otherPlayerIndex } = swapResult;
+                    const { give, take, otherPlayerIndex } = swapDecision;
                     const otherPlayer = game.players[otherPlayerIndex!];
 
-                    // Validate swap: cannot swap purple cards (landmarks)
-                    const giveCard = cards.find(v => v.name === give);
-                    const takeCard = cards.find(v => v.name === take);
-                    if (giveCard?.color === 'purple' || takeCard?.color === 'purple') {
-                        logger.warn(`${player.name} cannot swap tower cards`);
+                    // Use CardSwapService for validation and execution
+                    const otherDomainPlayer = convertToDomainPlayer(otherPlayer);
+                    const swapResult = CardSwapService.swapCards(
+                        domainPlayer,
+                        otherDomainPlayer,
+                        give,
+                        take
+                    );
+
+                    if (!swapResult.success) {
+                        logger.warn(`${swapResult.message}`);
                         break;
                     }
 
-                    // Validate player has the card to give
-                    if ((player.deck[give] || 0) < 1) {
-                        logger.warn(`${player.name} does not have card ${give} to give`);
-                        break;
-                    }
+                    // Sync domain changes back to old state
+                    convertFromDomainPlayer(domainPlayer, player);
+                    convertFromDomainPlayer(otherDomainPlayer, otherPlayer);
 
-                    // Execute swap
-                    player.deck[give]! -= 1;
-                    otherPlayer.deck[give] = (otherPlayer.deck[give] || 0) + 1;
-                    otherPlayer.deck[take]! -= 1;
-                    player.deck[take] = (player.deck[take] || 0) + 1;
-                    logger.info(`${player.name} swapped ${give} with ${otherPlayer.name} for ${take}`);
+                    logger.info(swapResult.message);
                     break;
             }
         }
