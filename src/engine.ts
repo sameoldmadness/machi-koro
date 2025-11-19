@@ -4,7 +4,8 @@ import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll,
 import logger from "./logger";
 import { DiceRoll } from "./domain/value-objects/DiceRoll";
 import { IncomeCalculator } from "./domain/services/IncomeCalculator";
-import { convertToDomainPlayer } from "./adapters/GameAdapter";
+import { SpecialAbilityService } from "./domain/services/SpecialAbilityService";
+import { convertToDomainPlayer, convertFromDomainPlayer } from "./adapters/GameAdapter";
 
 export async function initGame() {
     logger.info('=== Starting new game ===');
@@ -123,30 +124,24 @@ async function processPlayer(diceRoll: DiceRoll, player: Player, isActivePlayer:
 
             switch (purpleCard.specialRule) {
                 case 'take_2_coins_from_every_player':
-                    // Stadium: Take 2 coins from each other player
-                    const otherPlayers = game.players.filter(p => p !== player);
-                    let totalTaken = 0;
-                    for (const otherPlayer of otherPlayers) {
-                        const payment = Math.min(2, otherPlayer.budget);
-                        otherPlayer.budget -= payment;
-                        player.budget += payment;
-                        totalTaken += payment;
-                    }
-                    logger.info(`${player.name} takes ${totalTaken} coins from other players (${purpleCard.name})`);
-                    break;
-
                 case 'take_5_coins_from_one_player':
-                    // TV Center: Take 5 coins from richest player
-                    const nonActivePlayers = game.players.filter(p => p !== player);
-                    if (nonActivePlayers.length > 0) {
-                        const richestPlayer = nonActivePlayers.reduce((a, b) =>
-                            a.budget > b.budget ? a : b
-                        );
-                        const payment = Math.min(5, richestPlayer.budget);
-                        richestPlayer.budget -= payment;
-                        player.budget += payment;
-                        logger.info(`${player.name} takes ${payment} coins from ${richestPlayer.name} (${purpleCard.name})`);
+                    // Stadium or TV Center: Use SpecialAbilityService
+                    const otherPlayers = game.players.filter(p => p !== player);
+                    const otherDomainPlayers = otherPlayers.map(p => convertToDomainPlayer(p));
+
+                    const result = SpecialAbilityService.executeSpecialAbility(
+                        purpleCard,
+                        domainPlayer,
+                        otherDomainPlayers
+                    );
+
+                    // Sync domain changes back to old state
+                    player.budget = domainPlayer.getMoney().getValue();
+                    for (let i = 0; i < otherPlayers.length; i++) {
+                        otherPlayers[i].budget = otherDomainPlayers[i].getMoney().getValue();
                     }
+
+                    logger.info(`${player.name} ${result.description}`);
                     break;
 
                 case 'switch_1_non_tower_card_with_one_player':
