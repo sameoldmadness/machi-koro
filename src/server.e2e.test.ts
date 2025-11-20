@@ -10,10 +10,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import app from './server';
+import app from './infrastructure/api/server';
 
 // Mock the openai module to avoid API calls during tests
-vi.mock('./openai', () => ({
+vi.mock('./infrastructure/ai/openai', () => ({
   buy: vi.fn(async () => null),
 }));
 
