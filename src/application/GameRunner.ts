@@ -12,7 +12,6 @@ import { CardSwapService } from "../domain/services/CardSwapService";
 import logger from "../infrastructure/logging/logger";
 import { strategyRegistry } from "../infrastructure/strategies/StrategyRegistry";
 import { createSimpleStrategy } from "../infrastructure/strategies/SimpleStrategy";
-import { rollDice } from "../infrastructure/random/DiceRoller";
 import { shuffle } from "../infrastructure/random/ArrayShuffler";
 
 /**
@@ -129,36 +128,32 @@ async function executeTurn(game: Game, maxSteps: number, currentStep: number): P
     logger.info(`Player decides to roll ${numDice} dice(s)`);
 
     // Roll dice
-    let { total, rolls } = rollDice(numDice);
-    logger.info(`Player rolled ${total}` + (numDice > 1 ? ` (${rolls.join('+')})` : ''));
+    let diceRoll = DiceRoll.roll(numDice as 1 | 2);
+    logger.info(`Player rolled ${diceRoll.total}` + (numDice > 1 ? ` (${diceRoll.dice.join('+')})` : ''));
 
     // Reroll if Radio Tower is built
     if (player.hasLandmark('Radio Tower')) {
         logger.debug(`${player.name} has Radio Tower - checking for reroll`);
-        const rerollDice = await strategy.reroll(total, game);
+        const rerollDice = await strategy.reroll(diceRoll.total, game);
         if (rerollDice) {
-            const reroll = rollDice(rerollDice);
-            total = reroll.total;
-            rolls = reroll.rolls;
-            logger.info(`Player rerolled ${total}` + (rerollDice > 1 ? ` (${rolls.join('+')})` : ''));
+            diceRoll = DiceRoll.roll(rerollDice as 1 | 2);
+            logger.info(`Player rerolled ${diceRoll.total}` + (rerollDice > 1 ? ` (${diceRoll.dice.join('+')})` : ''));
         } else {
             logger.info(`Player decides not to reroll`);
         }
     }
 
     // Process income for all players
-    const diceRoll = DiceRoll.of(rolls.slice(0, numDice));
     processIncome(game, diceRoll);
 
     // Process special abilities
     await processSpecialAbilities(game, diceRoll);
 
     // Check for doubles with Amusement Park
-    if (rolls[0] === rolls[1] && numDice === 2 && player.hasLandmark('Amusement Park')) {
+    if (diceRoll.isDouble() && player.hasLandmark('Amusement Park')) {
         logger.info(`Player rolled doubles and gets to roll again`);
-        const bonusRoll = rollDice(numDice);
-        logger.info(`Player rolled ${bonusRoll.total} (${bonusRoll.rolls.join('+')})`);
-        const bonusDiceRoll = DiceRoll.of(bonusRoll.rolls);
+        const bonusDiceRoll = DiceRoll.roll(2);
+        logger.info(`Player rolled ${bonusDiceRoll.total} (${bonusDiceRoll.dice.join('+')})`);
         processIncome(game, bonusDiceRoll);
         await processSpecialAbilities(game, bonusDiceRoll);
     }
