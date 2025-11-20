@@ -1,7 +1,7 @@
 import { runGame } from './engine';
 import { cogStrategy, shopStrategy } from './strategy';
 import { shuffle, createGame, createPlayer, dump } from './utils';
-import logger from './logger';
+import logger from './infrastructure/logging/logger';
 
 let wins = {
     'A': 0,

@@ -3,7 +3,7 @@ import './.env';
 import express, { Request, Response } from 'express';
 import { initGame } from './engine';
 import { logFlush } from './utils';
-import logger from './logger';
+import logger from './infrastructure/logging/logger';
 
 const app = express();
 app.use(express.json());

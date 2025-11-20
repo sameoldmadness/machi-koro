@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { State } from "./game";
-import logger from "./logger";
+import logger from "./infrastructure/logging/logger";
 
 let client: OpenAI | null = null;
 

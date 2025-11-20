@@ -1,5 +1,5 @@
 import { amusementCards, AmusementName, cards, deck, Name, Player, startingAmusementDeck, startingBudget, startingDeck, State, Strategy } from "./game";
-import logger, { getBrowserLogs, clearBrowserLogs } from "./logger";
+import logger, { getBrowserLogs, clearBrowserLogs } from "./infrastructure/logging/logger";
 
 export function clone<T>(x: T): T {
     return JSON.parse(JSON.stringify(x));

@@ -1,7 +1,7 @@
 import { Player, State } from "./game";
 import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll, shuffle } from "./utils";
-import logger from "./logger";
+import logger from "./infrastructure/logging/logger";
 import { DiceRoll } from "./domain/value-objects/DiceRoll";
 import { IncomeCalculator } from "./domain/services/IncomeCalculator";
 import { SpecialAbilityService } from "./domain/services/SpecialAbilityService";

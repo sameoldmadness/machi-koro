@@ -1,7 +1,7 @@
 import { amusementCards, AmusementName, Name, State, Strategy } from "./game";
 import { buy } from "./openai";
 import { canBuy, canRollTwoDice } from "./utils";
-import logger from "./logger";
+import logger from "./infrastructure/logging/logger";
 
 
 
