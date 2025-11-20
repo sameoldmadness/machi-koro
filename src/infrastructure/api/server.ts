@@ -2,8 +2,7 @@ import '../../.env';
 
 import express, { Request, Response } from 'express';
 import { initGame } from '../../engine';
-import { logFlush } from '../../utils';
-import logger from '../logging/logger';
+import logger, { getBrowserLogs, clearBrowserLogs } from '../logging/logger';
 
 const app = express();
 app.use(express.json());
@@ -12,10 +11,11 @@ app.use(express.json());
  * Main endpoint: runs a game and returns the result with logs
  */
 app.get('/server', async (_req: Request, res: Response) => {
+    clearBrowserLogs(); // Clear previous logs before starting
     logger.info('Starting game via /server endpoint');
     await initGame();
-    const logs = logFlush();
     logger.info('Game completed successfully');
+    const logs = getBrowserLogs(); // Get logs after completion message
     res.json({ status: 'ok', time: new Date().toISOString(), log: logs });
 });
 
