@@ -1,67 +1,19 @@
 /**
- * Game Engine
- *
- * Application layer orchestrator that runs the game loop.
- * Coordinates between domain entities and infrastructure (strategies, logging).
+ * Game Runner
+ * Application layer - orchestrates game execution using domain services and infrastructure
  */
 
-import { Game } from "./domain/entities/Game";
-import { Player } from "./domain/entities/Player";
-import { DiceRoll } from "./domain/value-objects/DiceRoll";
-import { EstablishmentName, LandmarkName } from "./domain/value-objects/Card";
-import { IncomeCalculator } from "./domain/services/IncomeCalculator";
-import { PurchaseService } from "./domain/services/PurchaseService";
-import { SpecialAbilityService } from "./domain/services/SpecialAbilityService";
-import { CardSwapService } from "./domain/services/CardSwapService";
-import logger from "./infrastructure/logging/logger";
-
-/**
- * Strategy interface for AI decision making
- * This is an infrastructure concern, not domain logic
- */
-export interface GameStrategy {
-    roll: (game: Game) => Promise<number>;
-    reroll: (previousRoll: number, game: Game) => Promise<number | null>;
-    buy: (game: Game) => Promise<EstablishmentName | LandmarkName | null>;
-    swap: (game: Game) => Promise<{ give: EstablishmentName; take: EstablishmentName; otherPlayerIndex: number } | null>;
-}
-
-/**
- * Registry to associate players with their strategies
- */
-class StrategyRegistry {
-    private strategies: Map<string, GameStrategy> = new Map();
-
-    register(playerId: string, strategy: GameStrategy): void {
-        this.strategies.set(playerId, strategy);
-    }
-
-    get(playerId: string): GameStrategy | undefined {
-        return this.strategies.get(playerId);
-    }
-}
-
-const strategyRegistry = new StrategyRegistry();
-
-/**
- * Helper to roll dice
- */
-function rollDice(numDice: number): { total: number; rolls: number[] } {
-    const rolls = Array.from({ length: numDice }, () => Math.floor(Math.random() * 6) + 1);
-    const total = rolls.reduce((sum, roll) => sum + roll, 0);
-    return { total, rolls };
-}
-
-/**
- * Shuffle array in place (Fisher-Yates algorithm)
- */
-function shuffle<T>(array: T[]): T[] {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
+import { Game } from "../domain/entities/Game";
+import { DiceRoll } from "../domain/value-objects/DiceRoll";
+import { IncomeCalculator } from "../domain/services/IncomeCalculator";
+import { PurchaseService } from "../domain/services/PurchaseService";
+import { SpecialAbilityService } from "../domain/services/SpecialAbilityService";
+import { CardSwapService } from "../domain/services/CardSwapService";
+import logger from "../infrastructure/logging/logger";
+import { strategyRegistry } from "../infrastructure/strategies/StrategyRegistry";
+import { createSimpleStrategy } from "../infrastructure/strategies/SimpleStrategy";
+import { rollDice } from "../infrastructure/random/DiceRoller";
+import { shuffle } from "../infrastructure/random/ArrayShuffler";
 
 /**
  * Process income for all players based on dice roll
@@ -256,58 +208,6 @@ export async function runGame(game: Game, maxSteps: number = 1000): Promise<void
 }
 
 /**
- * Simple default strategy for testing/demo
- */
-const createSimpleStrategy = (): GameStrategy => ({
-    roll: async (game: Game) => {
-        const player = game.getCurrentPlayer();
-        return player.hasLandmark('Terminal') ? 2 : 1;
-    },
-    reroll: async (previousRoll: number, game: Game) => {
-        const player = game.getCurrentPlayer();
-        // Reroll if we have Radio Tower and rolled low
-        if (player.hasLandmark('Radio Tower') && previousRoll <= 6) {
-            return player.hasLandmark('Terminal') ? 2 : 1;
-        }
-        return null;
-    },
-    buy: async (game: Game) => {
-        const player = game.getCurrentPlayer();
-        const money = player.getMoney().getValue();
-        const market = game.getMarketDeck();
-
-        // Priority: Landmarks first, then establishments
-        const landmarks: LandmarkName[] = ['Terminal', 'Shopping Center', 'Amusement Park', 'Radio Tower'];
-        for (const landmark of landmarks) {
-            if (!player.hasLandmark(landmark)) {
-                const landmarkCard = PurchaseService.purchase(player, landmark, market);
-                if (landmarkCard.success) {
-                    // Undo the purchase (we're just checking)
-                    return landmark;
-                }
-            }
-        }
-
-        // Buy useful establishments
-        const establishments: EstablishmentName[] = [
-            'Grain Field', 'Bakery', 'Forest', 'Shop', 'Cheese Factory',
-            'Furniture Factory', 'Mine'
-        ];
-
-        for (const establishment of establishments) {
-            if (market.isAvailable(establishment) && money >= 1) {
-                return establishment;
-            }
-        }
-
-        return null;
-    },
-    swap: async (game: Game) => {
-        return null; // Don't swap for simple strategy
-    },
-});
-
-/**
  * Initialize and run a new game with default strategies
  */
 export async function initGame(): Promise<void> {
@@ -330,8 +230,3 @@ export async function initGame(): Promise<void> {
 
     await runGame(game, 100);
 }
-
-/**
- * Export strategy registry for testing
- */
-export { strategyRegistry };

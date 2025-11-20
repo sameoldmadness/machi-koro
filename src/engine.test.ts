@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { runGame, GameStrategy, strategyRegistry } from './engine';
+import { runGame } from './application/GameRunner';
+import { GameStrategy } from './infrastructure/strategies/GameStrategy';
+import { strategyRegistry } from './infrastructure/strategies/StrategyRegistry';
 import { Game } from './domain/entities/Game';
 import { EstablishmentName, LandmarkName } from './domain/value-objects/Card';
 import { Money } from './domain/value-objects/Money';

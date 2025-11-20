@@ -1,7 +1,7 @@
 import '../../.env';
 
 import express, { Request, Response } from 'express';
-import { initGame } from '../../engine';
+import { initGame } from '../../application/GameRunner';
 import logger, { getBrowserLogs, clearBrowserLogs } from '../logging/logger';
 
 const app = express();
