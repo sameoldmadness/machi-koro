@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { convertToDomainPlayer, convertFromDomainPlayer, convertToDomainGame, syncToOldState } from './GameAdapter';
 import { createPlayer, createGame } from '../utils';
-import { defaultStrategy } from '../strategy';
+import { defaultStrategy } from '../domain/strategies/Strategy';
 import { Money } from '../domain/value-objects/Money';
 
 describe('GameAdapter', () => {

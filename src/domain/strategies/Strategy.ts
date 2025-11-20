@@ -1,7 +1,7 @@
-import { amusementCards, AmusementName, Name, State, Strategy } from "./game";
-import { buy } from "./infrastructure/ai/openai";
-import { canBuy, canRollTwoDice } from "./utils";
-import logger from "./infrastructure/logging/logger";
+import { amusementCards, AmusementName, Name, State, Strategy } from "../../game";
+import { buy } from "../../infrastructure/ai/openai";
+import { canBuy, canRollTwoDice } from "../../utils";
+import logger from "../../infrastructure/logging/logger";
 
 
 

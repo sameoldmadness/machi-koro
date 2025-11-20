@@ -1,5 +1,5 @@
 import { runGame } from './engine';
-import { cogStrategy, shopStrategy } from './strategy';
+import { cogStrategy, shopStrategy } from './domain/strategies/Strategy';
 import { shuffle, createGame, createPlayer, dump } from './utils';
 import logger from './infrastructure/logging/logger';
 

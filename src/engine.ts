@@ -1,5 +1,5 @@
 import { Player, State } from "./game";
-import { cogStrategy, grainStrategy, shopStrategy } from "./strategy";
+import { cogStrategy, grainStrategy, shopStrategy } from "./domain/strategies/Strategy";
 import { buy, createGame, createPlayer, getPlayersToProcess, playerHasWon, roll, shuffle } from "./utils";
 import logger from "./infrastructure/logging/logger";
 import { DiceRoll } from "./domain/value-objects/DiceRoll";

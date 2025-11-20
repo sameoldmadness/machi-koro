@@ -4,7 +4,7 @@ import {
   grainStrategy,
   shopStrategy,
   cogStrategy,
-} from './strategy';
+} from './domain/strategies/Strategy';
 import { createPlayer, createGame } from './utils';
 import { State } from './game';
 

@@ -16,7 +16,7 @@ import {
   logFlush,
   printtt,
 } from './utils';
-import { defaultStrategy } from './strategy';
+import { defaultStrategy } from './domain/strategies/Strategy';
 import { Player, State, cards } from './game';
 
 describe('utils.ts', () => {
