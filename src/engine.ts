@@ -256,6 +256,58 @@ export async function runGame(game: Game, maxSteps: number = 1000): Promise<void
 }
 
 /**
+ * Simple default strategy for testing/demo
+ */
+const createSimpleStrategy = (): GameStrategy => ({
+    roll: async (game: Game) => {
+        const player = game.getCurrentPlayer();
+        return player.hasLandmark('Terminal') ? 2 : 1;
+    },
+    reroll: async (previousRoll: number, game: Game) => {
+        const player = game.getCurrentPlayer();
+        // Reroll if we have Radio Tower and rolled low
+        if (player.hasLandmark('Radio Tower') && previousRoll <= 6) {
+            return player.hasLandmark('Terminal') ? 2 : 1;
+        }
+        return null;
+    },
+    buy: async (game: Game) => {
+        const player = game.getCurrentPlayer();
+        const money = player.getMoney().getValue();
+        const market = game.getMarketDeck();
+
+        // Priority: Landmarks first, then establishments
+        const landmarks: LandmarkName[] = ['Terminal', 'Shopping Center', 'Amusement Park', 'Radio Tower'];
+        for (const landmark of landmarks) {
+            if (!player.hasLandmark(landmark)) {
+                const landmarkCard = PurchaseService.purchase(player, landmark, market);
+                if (landmarkCard.success) {
+                    // Undo the purchase (we're just checking)
+                    return landmark;
+                }
+            }
+        }
+
+        // Buy useful establishments
+        const establishments: EstablishmentName[] = [
+            'Grain Field', 'Bakery', 'Forest', 'Shop', 'Cheese Factory',
+            'Furniture Factory', 'Mine'
+        ];
+
+        for (const establishment of establishments) {
+            if (market.isAvailable(establishment) && money >= 1) {
+                return establishment;
+            }
+        }
+
+        return null;
+    },
+    swap: async (game: Game) => {
+        return null; // Don't swap for simple strategy
+    },
+});
+
+/**
  * Initialize and run a new game with default strategies
  */
 export async function initGame(): Promise<void> {
@@ -270,14 +322,10 @@ export async function initGame(): Promise<void> {
 
     logger.info(`Player order: ${players.map(p => p.name).join(' → ')}`);
 
-    // Import strategies dynamically to avoid circular dependency
-    const { cogStrategy, grainStrategy, shopStrategy } = await import('./domain/strategies/Strategy');
-
-    // Register strategies for each player
-    const strategies = [cogStrategy, grainStrategy, shopStrategy];
+    // Register simple strategies for each player
     for (let i = 0; i < players.length; i++) {
-        strategyRegistry.register(players[i].id, strategies[i]);
-        logger.debug(`Players: ${players[i].name} (${['cogStrategy', 'grainStrategy', 'shopStrategy'][i]})`);
+        strategyRegistry.register(players[i].id, createSimpleStrategy());
+        logger.debug(`Players: ${players[i].name} (simpleStrategy)`);
     }
 
     await runGame(game, 100);
