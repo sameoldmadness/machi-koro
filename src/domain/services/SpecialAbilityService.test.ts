@@ -115,15 +115,6 @@ describe('SpecialAbilityService', () => {
     });
   });
 
-  describe('Business Center (swap cards)', () => {
-    it('should indicate requires strategy input', () => {
-      const result = getBusinessCenterRequiresInput();
-
-      expect(result.requiresStrategyInput).toBe(true);
-      expect(result.moneyGained.getValue()).toBe(0);
-    });
-  });
-
   describe('SpecialAbilityService.executeSpecialAbility', () => {
     it('should execute Stadium ability', () => {
       const alice = Player.create('p1', 'Alice');
@@ -162,7 +153,6 @@ describe('SpecialAbilityService', () => {
       const businessCenter = CardRegistry.getEstablishment('Business Center');
       const result = SpecialAbilityService.executeSpecialAbility(businessCenter, alice, [bob]);
 
-      expect(result.requiresStrategyInput).toBe(true);
       expect(result.moneyGained.getValue()).toBe(0);
     });
 

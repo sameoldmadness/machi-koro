@@ -77,27 +77,6 @@ export class EstablishmentCard extends BaseCard {
     return this.activationNumbers.includes(roll);
   }
 
-  /**
-   * Check if card activates for active player (green/purple)
-   */
-  isActivePlayerCard(): boolean {
-    return this.color === 'green' || this.color === 'purple';
-  }
-
-  /**
-   * Check if card activates for non-active player (blue)
-   */
-  isPassiveCard(): boolean {
-    return this.color === 'blue';
-  }
-
-  /**
-   * Check if card steals from active player (red)
-   */
-  isHostileCard(): boolean {
-    return this.color === 'red';
-  }
-
   toJSON() {
     return {
       name: this.name,

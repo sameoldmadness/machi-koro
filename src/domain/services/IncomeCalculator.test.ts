@@ -10,7 +10,7 @@ describe('IncomeCalculator Domain Service', () => {
       const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([1]); // Activates Grain Field
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(1); // Grain Field gives 1 coin
     });
@@ -20,7 +20,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Grain Field'); // Now has 2 Grain Fields
       const roll = DiceRoll.of([1]);
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(2); // 2x Grain Field = 2 coins
     });
@@ -29,7 +29,7 @@ describe('IncomeCalculator Domain Service', () => {
       const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([6]); // Doesn't activate any starting cards
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(0);
     });
@@ -39,8 +39,8 @@ describe('IncomeCalculator Domain Service', () => {
       const roll2 = DiceRoll.of([2]);
       const roll3 = DiceRoll.of([3]);
 
-      const income2 = IncomeCalculator.calculateIncome(player, roll2);
-      const income3 = IncomeCalculator.calculateIncome(player, roll3);
+      const income2 = IncomeCalculator.calculateIncome('green', player, roll2);
+      const income3 = IncomeCalculator.calculateIncome('green', player, roll3);
 
       expect(income2.getValue()).toBe(1); // Bakery gives 1 coin
       expect(income3.getValue()).toBe(1); // Bakery gives 1 coin
@@ -55,7 +55,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Cheese Factory'); // Multiplies cows by 3
       const roll = DiceRoll.of([3, 4]); // Total 7 - Activates Cheese Factory
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(6); // 2 cows * 3 = 6 coins
     });
@@ -67,7 +67,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Furniture Factory'); // Multiplies cogs by 3
       const roll = DiceRoll.of([4, 4]); // Total 8 - Activates Furniture Factory
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(6); // 2 cogs * 3 = 6 coins
     });
@@ -78,7 +78,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Fruit Market'); // Multiplies grain by 2
       const roll = DiceRoll.of([5, 6]); // Total 11 - Activates Fruit Market
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(4); // (1 Grain Field + 1 Apple Garden) * 2 = 4 coins
     });
@@ -88,7 +88,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Cheese Factory'); // No cows
       const roll = DiceRoll.of([3, 4]); // Total 7
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(0);
     });
@@ -100,7 +100,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([2]); // Activates Bakery
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(2); // Bakery (1) + Shopping Center bonus (1)
     });
@@ -112,7 +112,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([3]); // Activates Bakery (green, bread)
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('green', player, roll);
 
       expect(income.getValue()).toBe(2); // Bakery (1 base + 1 Shopping Center bonus)
     });
@@ -122,7 +122,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([1]); // Activates Grain Field
 
-      const income = IncomeCalculator.calculateIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(1); // No bonus for grain cards
     });
@@ -133,7 +133,7 @@ describe('IncomeCalculator Domain Service', () => {
       const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([1]); // Activates Grain Field (blue)
 
-      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(1); // Grain Field gives 1 coin
     });
@@ -142,7 +142,7 @@ describe('IncomeCalculator Domain Service', () => {
       const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([2]); // Activates Bakery (green)
 
-      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(0); // Bakery is green, not passive
     });
@@ -154,7 +154,7 @@ describe('IncomeCalculator Domain Service', () => {
       // Player now has 2 cows
       const roll = DiceRoll.of([2]); // Activates Farm
 
-      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(2); // 2 Farms × 1 coin each
     });
@@ -164,7 +164,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([1]); // Activates Grain Field
 
-      const income = IncomeCalculator.calculatePassiveIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('blue', player, roll);
 
       expect(income.getValue()).toBe(1); // Grain Field doesn't get Shopping Center bonus (not bread/coffee)
     });
@@ -176,7 +176,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Cafe');
       const roll = DiceRoll.of([3]);
 
-      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('red', player, roll);
 
       expect(income.getValue()).toBe(1); // Cafe gives 1 coin from bank
     });
@@ -186,7 +186,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Restraunt');
       const roll = DiceRoll.of([3, 6]); // Total 9
 
-      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('red', player, roll);
 
       expect(income.getValue()).toBe(2); // Restraunt gives 2 coins from bank
     });
@@ -197,7 +197,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.buildLandmark('Shopping Center');
       const roll = DiceRoll.of([3]);
 
-      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('red', player, roll);
 
       expect(income.getValue()).toBe(2); // Cafe (1) + Shopping Center (1)
     });
@@ -209,7 +209,7 @@ describe('IncomeCalculator Domain Service', () => {
       player.addEstablishment('Cafe');
       const roll = DiceRoll.of([3]);
 
-      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('red', player, roll);
 
       expect(income.getValue()).toBe(3); // 3 Cafes = 3 coins from bank
     });
@@ -218,7 +218,7 @@ describe('IncomeCalculator Domain Service', () => {
       const player = Player.create('p1', 'Alice');
       const roll = DiceRoll.of([1]); // Activates Grain Field (blue, not red)
 
-      const income = IncomeCalculator.calculateRedCardIncome(player, roll);
+      const income = IncomeCalculator.calculateIncome('red', player, roll);
 
       expect(income.getValue()).toBe(0);
     });
@@ -235,7 +235,7 @@ describe('IncomeCalculator Domain Service', () => {
       const allPlayers = [player, bob, charlie];
       const roll = DiceRoll.of([6]);
 
-      const income = IncomeCalculator.calculateSpecialAbilityIncome(player, roll, allPlayers);
+      const income = IncomeCalculator.calculateIncome('purple', player, roll, allPlayers);
 
       expect(income.getValue()).toBe(4); // 2 coins from Bob + 2 from Charlie
     });
@@ -250,7 +250,7 @@ describe('IncomeCalculator Domain Service', () => {
       const allPlayers = [player, bob, charlie];
       const roll = DiceRoll.of([6]);
 
-      const income = IncomeCalculator.calculateSpecialAbilityIncome(player, roll, allPlayers);
+      const income = IncomeCalculator.calculateIncome('purple', player, roll, allPlayers);
 
       expect(income.getValue()).toBe(4); // Limited by players' money (2+2)
     });
@@ -261,7 +261,7 @@ describe('IncomeCalculator Domain Service', () => {
       const allPlayers = [player, Player.create('p2', 'Bob')];
       const roll = DiceRoll.of([6]);
 
-      const income = IncomeCalculator.calculateSpecialAbilityIncome(player, roll, allPlayers);
+      const income = IncomeCalculator.calculateIncome('purple', player, roll, allPlayers);
 
       expect(income.getValue()).toBe(5); // TV Center gives 5 coins
     });
@@ -272,57 +272,9 @@ describe('IncomeCalculator Domain Service', () => {
       const allPlayers = [player, Player.create('p2', 'Bob')];
       const roll = DiceRoll.of([6]);
 
-      const income = IncomeCalculator.calculateSpecialAbilityIncome(player, roll, allPlayers);
+      const income = IncomeCalculator.calculateIncome('purple', player, roll, allPlayers);
 
       expect(income.getValue()).toBe(0); // Business Center doesn't give coins
-    });
-  });
-
-  describe('player filtering', () => {
-    it('should identify players with passive income', () => {
-      const alice = Player.create('p1', 'Alice');
-      // Alice has Grain Field (blue) and Bakery (green) by default
-      const bob = Player.create('p2', 'Bob');
-      bob.addEstablishment('Farm'); // Activates on 2 (blue)
-      const charlie = Player.create('p3', 'Charlie');
-      charlie.addEstablishment('Shop'); // Doesn't activate on 2 (green, not blue)
-      const allPlayers = [alice, bob, charlie];
-      const roll = DiceRoll.of([2]);
-
-      const passivePlayers = IncomeCalculator.getPassiveIncomePlayers(allPlayers, roll);
-
-      expect(passivePlayers.length).toBe(1); // Only Bob has passive card (Farm) that activates on 2
-      expect(passivePlayers).toContain(bob);
-      expect(passivePlayers).not.toContain(alice); // Bakery is green (active), not blue (passive)
-      expect(passivePlayers).not.toContain(charlie);
-    });
-
-    it('should identify players with red cards', () => {
-      const alice = Player.create('p1', 'Alice');
-      alice.addEstablishment('Cafe');
-      const bob = Player.create('p2', 'Bob');
-      const charlie = Player.create('p3', 'Charlie');
-      charlie.addEstablishment('Cafe');
-      const allPlayers = [alice, bob, charlie];
-      const roll = DiceRoll.of([3]);
-
-      const redCardPlayers = IncomeCalculator.getRedCardPlayers(allPlayers, bob, roll);
-
-      expect(redCardPlayers.length).toBe(2); // Alice and Charlie
-      expect(redCardPlayers).toContain(alice);
-      expect(redCardPlayers).toContain(charlie);
-      expect(redCardPlayers).not.toContain(bob);
-    });
-
-    it('should exclude active player from red card players', () => {
-      const alice = Player.create('p1', 'Alice');
-      alice.addEstablishment('Cafe');
-      const allPlayers = [alice];
-      const roll = DiceRoll.of([3]);
-
-      const redCardPlayers = IncomeCalculator.getRedCardPlayers(allPlayers, alice, roll);
-
-      expect(redCardPlayers.length).toBe(0);
     });
   });
 });

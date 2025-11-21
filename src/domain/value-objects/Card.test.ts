@@ -74,33 +74,45 @@ describe('Card Value Objects', () => {
     it('should identify active player cards (green)', () => {
       const shop = CardRegistry.getEstablishment('Shop');
 
-      expect(shop.isActivePlayerCard()).toBe(true);
-      expect(shop.isPassiveCard()).toBe(false);
-      expect(shop.isHostileCard()).toBe(false);
+      expect(shop.color === 'green').toBe(true);
+      expect(shop.color === 'red').toBe(false);
+    });
+
+    it('should identify green cards', () => {
+      const shop = CardRegistry.getEstablishment('Shop');
+      const wheatField = CardRegistry.getEstablishment('Grain Field');
+
+      expect(shop.color === 'green').toBe(true);
+      expect(wheatField.color === 'green').toBe(false);
     });
 
     it('should identify passive cards (blue)', () => {
       const grainField = CardRegistry.getEstablishment('Grain Field');
 
-      expect(grainField.isPassiveCard()).toBe(true);
-      expect(grainField.isActivePlayerCard()).toBe(false);
-      expect(grainField.isHostileCard()).toBe(false);
+      expect(grainField.color === 'blue').toBe(true);
+      expect(grainField.color === 'purple').toBe(false);
     });
 
     it('should identify hostile cards (red)', () => {
       const cafe = CardRegistry.getEstablishment('Cafe');
 
-      expect(cafe.isHostileCard()).toBe(true);
-      expect(cafe.isActivePlayerCard()).toBe(false);
-      expect(cafe.isPassiveCard()).toBe(false);
+      expect(cafe.color === 'red').toBe(true);
+      expect(cafe.color === 'blue').toBe(false);
     });
 
     it('should identify special ability cards (purple)', () => {
       const stadium = CardRegistry.getEstablishment('Stadium');
 
-      expect(stadium.isActivePlayerCard()).toBe(true);
       expect(stadium.specialRule).toBe('take_2_coins_from_every_player');
       expect(stadium.isSingular).toBe(true);
+    });
+
+    it('should identify major establishment cards (purple)', () => {
+      const stadium = CardRegistry.getEstablishment('Stadium');
+      const wheatField = CardRegistry.getEstablishment('Grain Field');
+
+      expect(stadium.color === 'purple').toBe(true);
+      expect(wheatField.color === 'purple').toBe(false);
     });
 
     it('should have multiplier cards', () => {

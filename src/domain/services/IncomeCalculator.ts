@@ -8,26 +8,16 @@
 import { Player } from '../entities/Player';
 import { DiceRoll } from '../value-objects/DiceRoll';
 import { Money } from '../value-objects/Money';
-import { CardRegistry, EstablishmentCard } from '../value-objects/Card';
+import { EstablishmentCard, CardColor } from '../value-objects/Card';
 
 export class IncomeCalculator {
-  /**
-   * Calculate income for a player based on dice roll
-   * Only includes green and blue cards (excludes red and purple)
-   * - Green cards: Active player income
-   * - Blue cards: Passive income (all players)
-   * - Red cards: Excluded (handled by calculateRedCardIncome)
-   * - Purple cards: Excluded (use special abilities, not basic income)
-   */
-  static calculateIncome(player: Player, roll: DiceRoll): Money {
+  static calculateIncome(color: CardColor, player: Player, roll: DiceRoll, allPlayers: Player[] = []): Money {
     let totalIncome = 0;
 
     const establishments = player.getEstablishmentCards();
 
     for (const card of establishments) {
-      // Exclude red cards (handled separately by calculateRedCardIncome)
-      // Exclude purple cards (use special abilities, not basic income)
-      if (card.isHostileCard() || card.color === 'purple') {
+      if (card.color !== color) {
         continue;
       }
 
@@ -35,180 +25,52 @@ export class IncomeCalculator {
         continue;
       }
 
-      // Calculate base income
-      let cardIncome = card.income;
-
-      // Apply multipliers if any
-      if (card.multiplier && Object.keys(card.multiplier).length > 0) {
-        for (const [kind, multiplier] of Object.entries(card.multiplier)) {
-          const count = player.getEstablishmentCountByKind(kind);
-          cardIncome += count * multiplier;
-        }
-      }
-
-      // Apply Shopping Center bonus for bread and coffee cards
-      if (player.hasLandmark('Shopping Center')) {
-        if (card.kind === 'bread' || card.kind === 'coffee') {
-          cardIncome += 1;
-        }
-      }
-
-      totalIncome += cardIncome;
+      const cardIncome = this.calculateOneCardIncome(card, player, allPlayers);
+      totalIncome += cardIncome.getValue();
     }
 
     return Money.of(totalIncome);
   }
 
-  /**
-   * Calculate passive income (blue cards only) for non-active players
-   * Blue cards activate on any player's turn
-   */
-  static calculatePassiveIncome(player: Player, roll: DiceRoll): Money {
-    let totalIncome = 0;
+  static calculateOneCardIncome(card: EstablishmentCard, player: Player, allPlayers: Player[]): Money {
+    let cardIncome = card.income;
 
-    const establishments = player.getEstablishmentCards();
-
-    for (const card of establishments) {
-      if (!card.isPassiveCard()) {
-        continue;
-      }
-
-      if (!card.activatesOn(roll.total)) {
-        continue;
-      }
-
-      // Calculate base income
-      let cardIncome = card.income;
-
-      // Apply multipliers if any
-      if (card.multiplier && Object.keys(card.multiplier).length > 0) {
-        for (const [kind, multiplier] of Object.entries(card.multiplier)) {
-          const count = player.getEstablishmentCountByKind(kind);
-          cardIncome += count * multiplier;
-        }
-      }
-
-      // Apply Shopping Center bonus for bread and coffee cards
-      if (player.hasLandmark('Shopping Center')) {
-        if (card.kind === 'bread' || card.kind === 'coffee') {
-          cardIncome += 1;
-        }
-      }
-
-      totalIncome += cardIncome;
-    }
-
-    return Money.of(totalIncome);
-  }
-
-  /**
-   * Calculate income from red cards for a player on opponent's turn
-   * Red cards give income from the bank when other players roll
-   */
-  static calculateRedCardIncome(
-    player: Player,
-    roll: DiceRoll
-  ): Money {
-    let totalIncome = 0;
-
-    const establishments = player.getEstablishmentCards();
-
-    for (const card of establishments) {
-      if (!card.isHostileCard()) {
-        continue;
-      }
-
-      if (!card.activatesOn(roll.total)) {
-        continue;
-      }
-
-      // Calculate income from bank
-      let cardIncome = card.income;
-
-      // Apply Shopping Center bonus
-      if (player.hasLandmark('Shopping Center')) {
-        if (card.kind === 'bread' || card.kind === 'coffee') {
-          cardIncome += 1;
-        }
-      }
-
-      totalIncome += cardIncome;
-    }
-
-    return Money.of(totalIncome);
-  }
-
-  /**
-   * Calculate total income from special ability cards (purple cards)
-   * These require special handling based on the specific rule
-   */
-  static calculateSpecialAbilityIncome(
-    player: Player,
-    roll: DiceRoll,
-    allPlayers: Player[]
-  ): Money {
-    let totalIncome = 0;
-
-    const establishments = player.getEstablishmentCards();
-
-    for (const card of establishments) {
-      if (card.color !== 'purple') {
-        continue;
-      }
-
-      if (!card.activatesOn(roll.total)) {
-        continue;
-      }
-
-      // Handle special rules
-      switch (card.specialRule) {
-        case 'take_2_coins_from_every_player':
-          // Stadium: Take 2 coins from each other player
-          const otherPlayers = allPlayers.filter((p) => p.id !== player.id);
-          for (const otherPlayer of otherPlayers) {
-            const maxSteal = Math.min(2, otherPlayer.getMoney().getValue());
-            totalIncome += maxSteal;
-          }
-          break;
-
-        case 'take_5_coins_from_one_player':
-          // TV Center: Take 5 coins from one player (will need to be handled by application layer)
-          // For now, we'll calculate the potential income
-          totalIncome += 5;
-          break;
-
-        case 'switch_1_non_tower_card_with_one_player':
-          // Business Center: Switch cards (no income, handled by application layer)
-          break;
+    // Apply multipliers if any
+    if (card.multiplier && Object.keys(card.multiplier).length > 0) {
+      for (const [kind, multiplier] of Object.entries(card.multiplier)) {
+        const count = player.getEstablishmentCountByKind(kind);
+        cardIncome += count * multiplier;
       }
     }
 
-    return Money.of(totalIncome);
-  }
+    // Apply Shopping Center bonus for bread and coffee cards
+    if (player.hasLandmark('Shopping Center')) {
+      if (card.kind === 'bread' || card.kind === 'coffee') {
+        cardIncome += 1;
+      }
+    }
 
-  /**
-   * Get all players who should receive income on this roll (passive cards - blue)
-   */
-  static getPassiveIncomePlayers(allPlayers: Player[], roll: DiceRoll): Player[] {
-    return allPlayers.filter((player) => {
-      const cards = player.getEstablishmentCards();
-      return cards.some((card) => card.isPassiveCard() && card.activatesOn(roll.total));
-    });
-  }
+    switch (card.specialRule) {
+      case 'take_2_coins_from_every_player':
+        // Stadium: Take 2 coins from each other player
+        const otherPlayers = allPlayers.filter((p) => p.id !== player.id);
+        for (const otherPlayer of otherPlayers) {
+          const maxSteal = Math.min(2, otherPlayer.getMoney().getValue());
+          cardIncome += maxSteal;
+        }
+        break;
 
-  /**
-   * Get all players who should receive income from red cards (on opponent's turn)
-   */
-  static getRedCardPlayers(
-    allPlayers: Player[],
-    activePlayer: Player,
-    roll: DiceRoll
-  ): Player[] {
-    return allPlayers
-      .filter((player) => player.id !== activePlayer.id)
-      .filter((player) => {
-        const cards = player.getEstablishmentCards();
-        return cards.some((card) => card.isHostileCard() && card.activatesOn(roll.total));
-      });
+      case 'take_5_coins_from_one_player':
+        // TV Center: Take 5 coins from one player (will need to be handled by application layer)
+        // For now, we'll calculate the potential income
+        cardIncome += 5;
+        break;
+
+      case 'switch_1_non_tower_card_with_one_player':
+        // Business Center: Switch cards (no income, handled by application layer)
+        break;
+    }
+
+    return Money.of(cardIncome);
   }
 }

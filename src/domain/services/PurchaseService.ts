@@ -9,7 +9,6 @@
 import { Player } from '../entities/Player';
 import { MarketDeck } from '../entities/MarketDeck';
 import { EstablishmentName, LandmarkName, CardRegistry } from '../value-objects/Card';
-import { Money } from '../value-objects/Money';
 
 /**
  * Result of a purchase attempt

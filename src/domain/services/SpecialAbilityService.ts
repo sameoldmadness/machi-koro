@@ -6,7 +6,7 @@
  * between multiple players and cards.
  */
 
-import { Player as DomainPlayer } from '../entities/Player';
+import { Player } from '../entities/Player';
 import { Money } from '../value-objects/Money';
 import { EstablishmentCard } from '../value-objects/Card';
 
@@ -23,11 +23,6 @@ export interface SpecialAbilityResult {
    * Description of what happened
    */
   description: string;
-
-  /**
-   * Whether the ability requires strategy input (e.g., Business Center swap)
-   */
-  requiresStrategyInput?: boolean;
 }
 
 /**
@@ -35,8 +30,8 @@ export interface SpecialAbilityResult {
  * Takes 2 coins from each other player
  */
 export function executeStadium(
-  activePlayer: DomainPlayer,
-  otherPlayers: DomainPlayer[]
+  activePlayer: Player,
+  otherPlayers: Player[]
 ): SpecialAbilityResult {
   let totalGained = 0;
 
@@ -62,8 +57,8 @@ export function executeStadium(
  * Takes 5 coins from richest player
  */
 export function executeTVCenter(
-  activePlayer: DomainPlayer,
-  otherPlayers: DomainPlayer[]
+  activePlayer: Player,
+  otherPlayers: Player[]
 ): SpecialAbilityResult {
   if (otherPlayers.length === 0) {
     return {
@@ -100,7 +95,6 @@ export function getBusinessCenterRequiresInput(): SpecialAbilityResult {
   return {
     moneyGained: Money.of(0),
     description: 'Business Center swap requires strategy input',
-    requiresStrategyInput: true,
   };
 }
 
@@ -111,8 +105,8 @@ export class SpecialAbilityService {
    */
   static executeSpecialAbility(
     card: EstablishmentCard,
-    activePlayer: DomainPlayer,
-    otherPlayers: DomainPlayer[]
+    activePlayer: Player,
+    otherPlayers: Player[]
   ): SpecialAbilityResult {
     if (!card.specialRule) {
       return {

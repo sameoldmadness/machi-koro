@@ -3,7 +3,9 @@
  * Application layer - orchestrates game execution using domain services and infrastructure
  */
 
+import { CardColor } from "../domain/value-objects/Card";
 import { Game } from "../domain/entities/Game";
+import { Player } from "../domain/entities/Player";
 import { DiceRoll } from "../domain/value-objects/DiceRoll";
 import { IncomeCalculator } from "../domain/services/IncomeCalculator";
 import { PurchaseService } from "../domain/services/PurchaseService";
@@ -11,7 +13,6 @@ import { SpecialAbilityService } from "../domain/services/SpecialAbilityService"
 import { CardSwapService } from "../domain/services/CardSwapService";
 import logger from "../infrastructure/logging/logger";
 import { strategyRegistry } from "../infrastructure/strategies/StrategyRegistry";
-import { defaultStrategy } from "../infrastructure/strategies/DefaultStrategy";
 import { grainStrategy } from "../infrastructure/strategies/GrainStrategy";
 import { shopStrategy } from "../infrastructure/strategies/ShopStrategy";
 import { cogStrategy } from "../infrastructure/strategies/CogStrategy";
@@ -21,32 +22,21 @@ import { shuffle } from "../infrastructure/random/ArrayShuffler";
  * Process income for all players based on dice roll
  */
 function processIncome(game: Game, diceRoll: DiceRoll): void {
-    const players = game.getPlayers();
-    const activePlayerIndex = game.getCurrentPlayerIndex();
+    for (const player of game.getPlayers()) {
+        processIncomeForColor('blue', player, diceRoll);
 
-    // Process active player
-    const activePlayer = players[activePlayerIndex];
-    const activeIncome = IncomeCalculator.calculateIncome(activePlayer, diceRoll);
-    if (activeIncome.getValue() > 0) {
-        activePlayer.addMoney(activeIncome);
-        logger.debug(`${activePlayer.name} earned ${activeIncome.getValue()} coins from active player cards`);
-    }
-
-    // Process other players (passive + red cards)
-    for (let i = 0; i < players.length; i++) {
-        if (i === activePlayerIndex) continue;
-
-        const player = players[i];
-        const passiveIncome = IncomeCalculator.calculatePassiveIncome(player, diceRoll);
-        const redCardIncome = IncomeCalculator.calculateRedCardIncome(player, diceRoll);
-
-        const totalIncome = passiveIncome.getValue() + redCardIncome.getValue();
-        if (totalIncome > 0) {
-            player.addMoney(passiveIncome);
-            player.addMoney(redCardIncome);
-            logger.debug(`${player.name} earned ${totalIncome} coins from passive/red cards`);
+        if (player === game.getCurrentPlayer()) {
+            processIncomeForColor('green', player, diceRoll);
+        } else {
+            processIncomeForColor('red', player, diceRoll);
         }
     }
+}
+
+function processIncomeForColor(color: CardColor, player: Player, diceRoll: DiceRoll): void {
+    const income = IncomeCalculator.calculateIncome(color, player, diceRoll);
+    player.addMoney(income);
+    logger.debug(`${player.name} earned ${income.getValue()} coins from ${color} cards`);
 }
 
 /**
@@ -221,13 +211,7 @@ export async function initGame(): Promise<void> {
     logger.info(`Player order: ${players.map(p => p.name).join(' → ')}`);
 
     // Register simple strategies for each player
-    // Register strategies for each player
-    // Player 0: Default
-    // Player 1: Grain
-    // Player 2: Shop
-    // Player 3 (if any): Cog
-
-    const strategies = [defaultStrategy, grainStrategy, shopStrategy, cogStrategy];
+    const strategies = [grainStrategy, shopStrategy, cogStrategy];
 
     for (let i = 0; i < players.length; i++) {
         const strategy = strategies[i % strategies.length];
