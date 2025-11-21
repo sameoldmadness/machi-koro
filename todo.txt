@@ -7,10 +7,18 @@ TODO
 + implement card cost increse
 + support singular cards
 + implement purple cards
++ checks on both strategy and host sides #ai
++ unit tests #ai
++ split into modules clean up repetition #ai
+- create claude.md (check best practices)
+- remove dupliaction in GameRunner
+- write tests for all files
+- get rid of ArrayShuffler
+- restore deleted strategies
+- update readme
+- update package.json
+- remove unused code
+- remove unused exports
 
 - better strategy #ai
 - strategy comparison framework #ai
-
-- unit tests #ai
-- checks on both strategy and host sides #ai
-- split into modules clean up repetition #ai

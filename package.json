@@ -29,7 +29,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "vitest run src/server.e2e.test.ts",
-    "server": "npx ts-node ./src/server.ts"
+    "server": "npx ts-node ./src/infrastructure/api/server.ts"
   },
   "keywords": [],
   "author": "",

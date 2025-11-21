@@ -11,7 +11,10 @@ import { SpecialAbilityService } from "../domain/services/SpecialAbilityService"
 import { CardSwapService } from "../domain/services/CardSwapService";
 import logger from "../infrastructure/logging/logger";
 import { strategyRegistry } from "../infrastructure/strategies/StrategyRegistry";
-import { createSimpleStrategy } from "../infrastructure/strategies/SimpleStrategy";
+import { defaultStrategy } from "../infrastructure/strategies/DefaultStrategy";
+import { grainStrategy } from "../infrastructure/strategies/GrainStrategy";
+import { shopStrategy } from "../infrastructure/strategies/ShopStrategy";
+import { cogStrategy } from "../infrastructure/strategies/CogStrategy";
 import { shuffle } from "../infrastructure/random/ArrayShuffler";
 
 /**
@@ -218,9 +221,18 @@ export async function initGame(): Promise<void> {
     logger.info(`Player order: ${players.map(p => p.name).join(' → ')}`);
 
     // Register simple strategies for each player
+    // Register strategies for each player
+    // Player 0: Default
+    // Player 1: Grain
+    // Player 2: Shop
+    // Player 3 (if any): Cog
+
+    const strategies = [defaultStrategy, grainStrategy, shopStrategy, cogStrategy];
+
     for (let i = 0; i < players.length; i++) {
-        strategyRegistry.register(players[i].id, createSimpleStrategy());
-        logger.debug(`Players: ${players[i].name} (simpleStrategy)`);
+        const strategy = strategies[i % strategies.length];
+        strategyRegistry.register(players[i].id, strategy);
+        logger.debug(`Player ${players[i].name} assigned strategy index ${i % strategies.length}`);
     }
 
     await runGame(game, 100);

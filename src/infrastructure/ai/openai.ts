@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { State } from "../../game";
+import { Game } from "../../domain/entities/Game";
+import { EstablishmentName, LandmarkName } from "../../domain/value-objects/Card";
 import logger from "../logging/logger";
 
 let client: OpenAI | null = null;
@@ -11,7 +12,7 @@ function getClient(): OpenAI {
     return client;
 }
 
-export async function buy(game: State) {
+export async function buy(game: Game): Promise<EstablishmentName | LandmarkName | null> {
     logger.debug(`OpenAI buy request initiated`);
 
     const response = await getClient().responses.create({
@@ -33,7 +34,7 @@ export async function buy(game: State) {
             Go over top 10 best strategies for Machi Koro players and base your decision on them.
             Invalidate strategies that don't fit the current game state.
         `,
-        input: JSON.stringify(game),
+        input: JSON.stringify(game.toJSON()),
     });
 
     logger.debug(`OpenAI response received: ${JSON.stringify(response.output_text, null, 2)}`);

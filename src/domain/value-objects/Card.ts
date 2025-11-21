@@ -48,7 +48,7 @@ abstract class BaseCard {
   constructor(
     public readonly name: string,
     public readonly cost: Money
-  ) {}
+  ) { }
 
   abstract toJSON(): any;
 }
@@ -262,6 +262,22 @@ export class CardRegistry {
   static getEstablishmentsByKind(kind: CardKind): EstablishmentCard[] {
     this.initialize();
     return this.getAllEstablishments().filter(card => card.kind === kind);
+  }
+
+  /**
+   * Check if a name corresponds to an establishment
+   */
+  static isEstablishment(name: string): name is EstablishmentName {
+    this.initialize();
+    return this.establishments.has(name as EstablishmentName);
+  }
+
+  /**
+   * Check if a name corresponds to a landmark
+   */
+  static isLandmark(name: string): name is LandmarkName {
+    this.initialize();
+    return this.landmarks.has(name as LandmarkName);
   }
 }
 

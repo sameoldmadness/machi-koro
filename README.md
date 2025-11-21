@@ -289,7 +289,8 @@ machi-koro/
 ├── src/
 │   ├── game.ts           # Card definitions & game state types
 │   ├── engine.ts         # Core game loop & mechanics
-│   ├── strategy.ts       # AI strategy implementations
+│   ├── infrastructure/   # Infrastructure (logging, AI, strategies)
+│   │   ├── strategies/   # AI strategy implementations
 │   ├── openai.ts         # GPT-5 integration
 │   ├── server.ts         # Express API server
 │   ├── utils.ts          # Helper functions
